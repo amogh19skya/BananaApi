@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Banana Brain Quest</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="app.js" defer></script>
+</head>
+
+<body>
+  <main class="game-card">
+    <p class="eyebrow">THE DAILY BRAIN CHALLENGE</p>
+    <h1>🍌 Banana Brain Quest</h1>
+    <p class="subtitle">Look at the picture. Enter the missing number.</p>
+
+    <div class="stats">
+      <div><span>Score</span><strong id="score">0</strong></div>
+      <div><span>Question</span><strong id="question-number">1</strong></div>
+    </div>
+
+    <div id="status" class="status" role="status" aria-live="polite">
+      Press Start Game when you're ready.
+    </div>
+
+    <div class="puzzle-frame">
+      <img id="puzzle-image" alt="Banana number puzzle" hidden />
+      <div id="loading">Your first puzzle is waiting…</div>
+    </div>
+
+    <form id="answer-form">
+      <label for="answer">Your answer</label>
+      <input id="answer" type="number" step="1" inputmode="numeric" placeholder="Enter a number" required disabled />
+      <button id="submit-button" type="submit" disabled>
+        Check answer
+      </button>
+    </form>
+
+    <button id="start-button" class="secondary-button" type="button">
+      Start Game
+    </button>
+    <p class="footer">Think carefully. Trust your logic.</p>
+  </main>
+</body>
+
+</html>
