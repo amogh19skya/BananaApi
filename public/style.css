@@ -148,3 +148,12 @@ button:disabled {
 [hidden] {
   display: none !important;
 }
+
+#time-left {
+  color: #806000;
+  font-variant-numeric: tabular-nums;
+}
+
+#time-left.urgent {
+  color: #c0392b;
+}
