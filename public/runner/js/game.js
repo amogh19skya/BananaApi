@@ -1,17 +1,17 @@
 // ================================================================
 // Banana Surfers – Main Game Loop
-// Ties together World, Player, Obstacles, Collectibles,
-// Powerups, Puzzle, Audio, Input, and HUD
+// Direct 1-scene continuous runner flow:
+// Spawns directly into running gameplay on load with zero intro screens
 // ================================================================
 const Game = (() => {
-  // ---- Game State ----
-  const STATE = { MENU: 0, RUNNING: 1, PUZZLE: 2, GAMEOVER: 3 };
-  let state = STATE.MENU;
+  // States: RUNNING, PUZZLE (Bullet-Time), GAMEOVER
+  const STATE = { RUNNING: 1, PUZZLE: 2, GAMEOVER: 3 };
+  let state = STATE.RUNNING;
 
-  // Speed & difficulty
-  const BASE_SPEED = 15; // m/s
-  const MAX_SPEED = 38;
-  const SPEED_K = 0.002; // Logarithmic scaling factor
+  // Running speed progression (m/s)
+  const BASE_SPEED = 16;
+  const MAX_SPEED = 36;
+  const SPEED_K = 0.0022;
 
   let speed = BASE_SPEED;
   let distance = 0;
@@ -21,52 +21,65 @@ const Game = (() => {
   let cratesSolved = 0;
   let runStartTime = 0;
 
-  // Clock
+  // Frame timing
   let lastTime = 0;
-  let timeDilation = 1.0; // 1.0 = normal, 0.03 = bullet-time
+  let timeDilation = 1.0;
 
-  // DOM references
+  // DOM elements
   const canvas = document.getElementById("runner-canvas");
-  const menuScreen = document.getElementById("menu-screen");
   const gameoverScreen = document.getElementById("gameover-screen");
-  const playBtn = document.getElementById("play-btn");
   const goRetryBtn = document.getElementById("go-retry-btn");
-  const goMenuBtn = document.getElementById("go-menu-btn");
 
-  // HUD
+  // HUD elements
   const hudScoreValue = document.getElementById("hud-score-value");
   const hudDistanceValue = document.getElementById("hud-distance-value");
   const hudBananaCount = document.getElementById("hud-banana-count");
 
-  // Game Over stats
+  // Game over elements
   const goDistance = document.getElementById("go-distance");
   const goScore = document.getElementById("go-score");
   const goBananas = document.getElementById("go-bananas");
   const goCrates = document.getElementById("go-crates");
 
-  // ---- Init ----
   function init() {
     World.init(canvas);
     bindEvents();
+
+    // Start directly in running scene!
+    startGame();
+
+    lastTime = performance.now();
     requestAnimationFrame(gameLoop);
   }
 
   function bindEvents() {
-    playBtn.addEventListener("click", startGame);
-    goRetryBtn.addEventListener("click", startGame);
-    goMenuBtn.addEventListener("click", showMenu);
-  }
+    if (goRetryBtn) {
+      goRetryBtn.addEventListener("click", () => {
+        startGame();
+      });
+    }
 
-  function showMenu() {
-    state = STATE.MENU;
-    menuScreen.classList.remove("hidden");
-    gameoverScreen.classList.add("hidden");
+    // Space / Enter on Game Over screen restarts run
+    document.addEventListener("keydown", (e) => {
+      if (state === STATE.GAMEOVER && (e.code === "Space" || e.code === "Enter")) {
+        e.preventDefault();
+        startGame();
+      }
+    });
+
+    // Unlock Web Audio on first user gesture
+    const unlockOnce = () => {
+      AudioEngine.unlock();
+      window.removeEventListener("pointerdown", unlockOnce);
+      window.removeEventListener("keydown", unlockOnce);
+    };
+    window.addEventListener("pointerdown", unlockOnce);
+    window.addEventListener("keydown", unlockOnce);
   }
 
   function startGame() {
     AudioEngine.unlock();
 
-    // Reset everything
     state = STATE.RUNNING;
     speed = BASE_SPEED;
     distance = 0;
@@ -77,8 +90,7 @@ const Game = (() => {
     timeDilation = 1.0;
     runStartTime = performance.now();
 
-    menuScreen.classList.add("hidden");
-    gameoverScreen.classList.add("hidden");
+    if (gameoverScreen) gameoverScreen.classList.add("hidden");
 
     const scene = World.getScene();
     Player.reset(scene);
@@ -99,17 +111,16 @@ const Game = (() => {
     state = STATE.GAMEOVER;
     AudioEngine.playCrash();
 
-    const runDuration = Math.floor((performance.now() - runStartTime) / 1000);
+    const runDuration = Math.max(1, Math.floor((performance.now() - runStartTime) / 1000));
 
-    // Update game over screen
-    goDistance.textContent = Math.floor(distance) + "m";
-    goScore.textContent = score;
-    goBananas.textContent = bananaCount;
-    goCrates.textContent = `${cratesSolved}/${cratesEncountered}`;
+    // Update in-scene Game Over Card
+    if (goDistance) goDistance.textContent = Math.floor(distance) + "m";
+    if (goScore) goScore.textContent = score;
+    if (goBananas) goBananas.textContent = bananaCount;
+    if (goCrates) goCrates.textContent = `${cratesSolved}/${cratesEncountered}`;
+    if (gameoverScreen) gameoverScreen.classList.remove("hidden");
 
-    gameoverScreen.classList.remove("hidden");
-
-    // Save run to server (fire-and-forget)
+    // Async save run stats (if logged in)
     fetch("/api/runner/end-run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -121,48 +132,43 @@ const Game = (() => {
         score,
         duration: runDuration
       })
-    }).catch(() => {}); // Silently fail if not logged in
+    }).catch(() => {});
   }
 
-  // ---- Speed Curve ----
   function getSpeed() {
-    // Logarithmic: v = base + (max-base) * ln(1 + k*d) / ln(1 + k*d_cap)
-    const dCap = 2500;
+    const dCap = 2200;
     const progress = Math.log(1 + SPEED_K * distance) / Math.log(1 + SPEED_K * dCap);
     return BASE_SPEED + (MAX_SPEED - BASE_SPEED) * Math.min(progress, 1);
   }
 
-  // ---- HUD ----
   function updateHUD() {
     if (hudScoreValue) hudScoreValue.textContent = score;
     if (hudDistanceValue) hudDistanceValue.textContent = Math.floor(distance) + "m";
     if (hudBananaCount) hudBananaCount.textContent = bananaCount;
   }
 
-  // ---- Main Game Loop ----
+  // ============================================================
+  // Main Game Loop (60 FPS)
+  // ============================================================
   function gameLoop(now) {
     requestAnimationFrame(gameLoop);
 
-    const rawDelta = Math.min((now - lastTime) / 1000, 0.05); // Cap at 50ms
+    const rawDelta = Math.min((now - lastTime) / 1000, 0.05);
     lastTime = now;
-
-    if (state === STATE.MENU) {
-      World.render();
-      return;
-    }
 
     if (state === STATE.GAMEOVER) {
       World.render();
       return;
     }
 
-    // Apply time dilation for bullet-time
     const delta = rawDelta * timeDilation;
 
+    // ---- STATE.PUZZLE (Bullet-Time Slowdown) ----
     if (state === STATE.PUZZLE) {
-      // During puzzle, game runs at 0.03x speed
-      PuzzleSystem.update(rawDelta); // Puzzle timer runs in real-time
-      // Slow-motion world update
+      // Puzzle timer runs in real-time
+      PuzzleSystem.update(rawDelta);
+
+      // 3D world moves in extreme slow-motion
       const slowDelta = rawDelta * 0.03;
       speed = getSpeed();
       Player.update(slowDelta, speed);
@@ -177,7 +183,7 @@ const Game = (() => {
     speed = getSpeed();
     distance += speed * delta;
 
-    // Update systems
+    // Update World & Entities
     Player.update(delta, speed);
     World.update(Player.getZ());
     Obstacles.update(Player.getZ(), distance);
@@ -188,10 +194,11 @@ const Game = (() => {
     const playerBox = Player.getCollisionBox();
     const hitObs = Obstacles.checkCollision(playerBox);
 
-    if (hitObs && !Player.isPlayerInvulnerable()) {
+    if (hitObs && !Player.isInvulnerable()) {
       if (Player.consumeHoverboard()) {
-        // Hoverboard absorbs crash
-        Player.triggerInvulnerability(1.5);
+        // Golden Hoverboard absorbs crash hit!
+        AudioEngine.playCrash();
+        Player.triggerInvulnerability(2.0);
       } else {
         gameOver();
         World.render();
@@ -200,55 +207,59 @@ const Game = (() => {
     }
 
     // ---- Collision: Bananas ----
-    const bananasCollected = Collectibles.checkBananaCollision(playerBox);
-    if (bananasCollected > 0) {
-      bananaCount += bananasCollected;
-      score += bananasCollected * PowerupManager.getMultiplier();
+    const bananasGained = Collectibles.checkBananaCollision(playerBox);
+    if (bananasGained > 0) {
+      const mult = PowerupManager.getMultiplier();
+      bananaCount += bananasGained;
+      score += bananasGained * 5 * mult;
       AudioEngine.playBananaPickup();
     }
 
-    // ---- Collision: Crates ----
-    const crate = Collectibles.checkCrateCollision(playerBox);
-    if (crate) {
+    // ---- Collision: Banana Mystery Crate ----
+    const hitCrate = Collectibles.checkCrateCollision(playerBox);
+    if (hitCrate) {
       cratesEncountered++;
       AudioEngine.playCratePickup();
 
-      // Enter bullet-time puzzle mode
+      // Enter Bullet-Time Puzzle Interruption
       state = STATE.PUZZLE;
       timeDilation = 0.03;
 
       PuzzleSystem.showPuzzle((result) => {
-        // Callback when puzzle is resolved
+        // Return to normal speed
         state = STATE.RUNNING;
         timeDilation = 1.0;
 
         if (result.solved && result.powerup) {
           cratesSolved++;
+          // Grant the Super Power to use during the run!
           PowerupManager.activate(result.powerup);
-          score += 50 * PowerupManager.getMultiplier();
+          score += 100 * PowerupManager.getMultiplier();
         }
       });
     }
 
-    // ---- Score from distance ----
-    score = Math.max(score, Math.floor(distance / 10) + bananaCount * PowerupManager.getMultiplier());
+    // Distance Score
+    const distScore = Math.floor(distance / 5) * PowerupManager.getMultiplier();
+    score = Math.max(score, distScore + bananaCount * 5 * PowerupManager.getMultiplier());
 
     updateHUD();
 
-    // ---- Camera follow ----
+    // ---- Camera Follow ----
     const cam = World.getCamera();
     if (cam) {
-      cam.position.z = Player.getZ() + 6;
-      cam.position.x = Player.getX() * 0.3; // Gentle follow
-      cam.lookAt(Player.getX() * 0.5, 1.2, Player.getZ() - 20);
+      const targetCamY = Player.isJetpackActive() ? 8.5 : 3.8;
+      cam.position.y += (targetCamY - cam.position.y) * Math.min(1, delta * 4.0);
+      cam.position.z = Player.getZ() + 6.2;
+      cam.position.x = Player.getX() * 0.28;
+      cam.lookAt(Player.getX() * 0.45, Player.getY() * 0.8 + 0.6, Player.getZ() - 20);
     }
 
     World.render();
   }
 
-  // ---- Boot ----
+  // Auto-boot
   init();
 
-  return { startGame, showMenu };
+  return { startGame };
 })();
-

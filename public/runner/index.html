@@ -15,33 +15,41 @@
   <canvas id="runner-canvas"></canvas>
 
   <!-- ======================================================== -->
-  <!-- HUD Overlay                                              -->
+  <!-- HUD Overlay (Minimalist Arcade Cyberpunk)               -->
   <!-- ======================================================== -->
   <div id="hud" class="hud">
     <div class="hud-top">
-      <div class="hud-score">
+      <div class="hud-pill hud-score">
         <span class="hud-label">SCORE</span>
         <span id="hud-score-value" class="hud-value">0</span>
       </div>
-      <div class="hud-distance">
+      <div class="hud-pill hud-distance">
         <span class="hud-label">DISTANCE</span>
         <span id="hud-distance-value" class="hud-value">0m</span>
       </div>
-      <div class="hud-bananas">
-        <span class="hud-label">🍌</span>
+      <div class="hud-pill hud-bananas">
+        <span class="hud-icon">🍌</span>
         <span id="hud-banana-count" class="hud-value">0</span>
       </div>
-      <div class="hud-multiplier hidden" id="hud-multiplier">
-        <span id="hud-multiplier-value" class="hud-multiplier-text">x2</span>
+      <div class="hud-pill hud-multiplier hidden" id="hud-multiplier">
+        <span id="hud-multiplier-value" class="hud-multiplier-text">2X</span>
       </div>
     </div>
 
-    <!-- Active Power-Up Indicator -->
+    <!-- Active Power-Up Banner & Depleting Energy Bar -->
     <div id="hud-powerup" class="hud-powerup hidden">
+      <div class="powerup-badge">
+        <span id="powerup-icon" class="powerup-icon">⚡</span>
+        <span id="powerup-name" class="powerup-name">SUPER POWER</span>
+      </div>
       <div class="powerup-bar-bg">
         <div id="powerup-bar-fill" class="powerup-bar-fill"></div>
       </div>
-      <span id="powerup-name" class="powerup-name">JETPACK</span>
+    </div>
+
+    <!-- Quick back-to-quest link in subtle corner pill -->
+    <div class="hud-corner-nav">
+      <a href="/" class="corner-link" title="Banana Brain Quest Arena">🎯 Quest Arena</a>
     </div>
   </div>
 
@@ -50,19 +58,34 @@
   <!-- ======================================================== -->
   <div id="puzzle-modal" class="puzzle-modal hidden">
     <div class="puzzle-modal-content">
-      <div class="puzzle-timer-ring">
-        <svg viewBox="0 0 120 120">
-          <circle class="timer-ring-bg" cx="60" cy="60" r="54" />
-          <circle id="timer-ring-progress" class="timer-ring-progress" cx="60" cy="60" r="54" />
-        </svg>
-        <span id="puzzle-timer-text" class="puzzle-timer-text">5</span>
+      <div class="puzzle-header">
+        <div class="puzzle-timer-ring">
+          <svg viewBox="0 0 120 120">
+            <circle class="timer-ring-bg" cx="60" cy="60" r="54" />
+            <circle id="timer-ring-progress" class="timer-ring-progress" cx="60" cy="60" r="54" />
+          </svg>
+          <span id="puzzle-timer-text" class="puzzle-timer-text">5</span>
+        </div>
+        <div class="puzzle-title-box">
+          <h2 class="puzzle-title">📦 BANANA CRATE</h2>
+          <span class="puzzle-sub">Solve for Super Power!</span>
+        </div>
       </div>
-      <h2 class="puzzle-title">🍌 BANANA CRATE PUZZLE</h2>
+
       <div class="puzzle-image-frame">
-        <img id="puzzle-image" alt="Banana puzzle" />
-        <div id="puzzle-loading" class="puzzle-loading">Loading puzzle…</div>
+        <img id="puzzle-image" alt="Banana Equation Puzzle" />
+        <div id="puzzle-loading" class="puzzle-loading">Fetching Banana API Puzzle…</div>
       </div>
-      <p class="puzzle-instruction">Find the missing number!</p>
+
+      <!-- Powerup Grant Announcement Splash (Shows on correct) -->
+      <div id="puzzle-reward-splash" class="puzzle-reward-splash hidden">
+        <span id="reward-icon" class="reward-icon">🚀</span>
+        <h3 id="reward-title" class="reward-title">JETPACK ACTIVATED!</h3>
+        <p class="reward-desc">Fly above all obstacles and harvest sky bananas!</p>
+      </div>
+
+      <p class="puzzle-instruction" id="puzzle-instruction">Tap the missing number (0 – 9):</p>
+      
       <div class="puzzle-numpad" id="puzzle-numpad">
         <button class="numpad-key" data-num="1">1</button>
         <button class="numpad-key" data-num="2">2</button>
@@ -79,83 +102,40 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- Start / Menu Screen                                      -->
-  <!-- ======================================================== -->
-  <div id="menu-screen" class="menu-screen">
-    <div class="menu-content">
-      <div class="menu-badge">🏃‍♂️ ENDLESS RUNNER</div>
-      <h1 class="menu-title">
-        <span class="title-banana">BANANA</span>
-        <span class="title-surfers">SURFERS</span>
-      </h1>
-      <p class="menu-tagline">RUN. SOLVE. POWER UP.</p>
-
-      <div class="menu-info">
-        <div class="menu-info-item">
-          <span class="info-icon">🍌</span>
-          <span>Collect Crates</span>
-        </div>
-        <div class="menu-info-item">
-          <span class="info-icon">🧩</span>
-          <span>Solve Puzzles</span>
-        </div>
-        <div class="menu-info-item">
-          <span class="info-icon">⚡</span>
-          <span>Earn Superpowers</span>
-        </div>
-      </div>
-
-      <button id="play-btn" class="play-btn" type="button">
-        <span class="play-icon">▶</span>
-        <span>START RUN</span>
-      </button>
-
-      <div class="menu-links">
-        <a href="/" class="menu-link">🎯 Brain Quest</a>
-        <a href="/leaderboard" class="menu-link">🏆 Leaderboard</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- ======================================================== -->
-  <!-- Game Over Screen                                         -->
+  <!-- In-Scene Game Over Card (Instant 1-Click Retry)           -->
   <!-- ======================================================== -->
   <div id="gameover-screen" class="gameover-screen hidden">
-    <div class="gameover-content">
-      <div class="gameover-icon">💥</div>
-      <h2 class="gameover-title">GAME OVER</h2>
-      <div class="gameover-stats">
-        <div class="go-stat">
-          <span class="go-stat-label">DISTANCE</span>
-          <span id="go-distance" class="go-stat-value">0m</span>
+    <div class="gameover-card">
+      <div class="gameover-banner">💥 CRASHED!</div>
+      <h2 class="gameover-title">RUN STATS</h2>
+      <div class="gameover-stats-grid">
+        <div class="go-stat-pill">
+          <span class="go-label">DISTANCE</span>
+          <span id="go-distance" class="go-val">0m</span>
         </div>
-        <div class="go-stat">
-          <span class="go-stat-label">SCORE</span>
-          <span id="go-score" class="go-stat-value">0</span>
+        <div class="go-stat-pill">
+          <span class="go-label">SCORE</span>
+          <span id="go-score" class="go-val">0</span>
         </div>
-        <div class="go-stat">
-          <span class="go-stat-label">🍌 COLLECTED</span>
-          <span id="go-bananas" class="go-stat-value">0</span>
+        <div class="go-stat-pill">
+          <span class="go-label">🍌 COLLECTED</span>
+          <span id="go-bananas" class="go-val">0</span>
         </div>
-        <div class="go-stat">
-          <span class="go-stat-label">CRATES SOLVED</span>
-          <span id="go-crates" class="go-stat-value">0/0</span>
+        <div class="go-stat-pill">
+          <span class="go-label">CRATES SOLVED</span>
+          <span id="go-crates" class="go-val">0/0</span>
         </div>
       </div>
       <div class="gameover-actions">
-        <button id="go-retry-btn" class="go-btn go-btn-primary" type="button">
+        <button id="go-retry-btn" class="go-retry-btn" type="button">
           🔄 RUN AGAIN
         </button>
-        <button id="go-menu-btn" class="go-btn go-btn-secondary" type="button">
-          🏠 MENU
-        </button>
+        <a href="/" class="go-quest-link">🎯 Brain Quest Arena</a>
       </div>
     </div>
   </div>
 
-  <!-- ======================================================== -->
-  <!-- Touch Controls (Mobile)                                  -->
-  <!-- ======================================================== -->
+  <!-- Touch Controls Gesture Zone -->
   <div id="touch-zone" class="touch-zone"></div>
 
   <!-- Scripts -->
@@ -172,4 +152,3 @@
 </body>
 
 </html>
-
