@@ -143,6 +143,10 @@ const Obstacles = (() => {
 
   function checkCollision(playerBox) {
     if (!playerBox) return null;
+    // Jetpack flight makes player completely immune to ground obstacles
+    if (typeof Player !== "undefined" && (Player.isJetpackActive() || Player.getY() > 3.8)) {
+      return null;
+    }
     for (const obs of pool) {
       const ob = obs.bbox;
       // Update bbox world position
