@@ -354,6 +354,51 @@ function finishGame(message) {
   startButton.textContent = "Play Again";
 
   showResultsScreen(message);
+  autoSubmitScore();
+}
+
+// Auto-submit score for authenticated users (Theme 4 - Virtual Identity)
+async function autoSubmitScore() {
+  const saveStatus = document.querySelector("#save-status");
+
+  try {
+    const authRes = await fetch("/api/auth/me");
+    if (!authRes.ok) {
+      if (saveStatus) saveStatus.textContent = "Login to save your scores";
+      return;
+    }
+
+    const authData = await authRes.json();
+    if (!authData.success || !authData.user) {
+      if (saveStatus) saveStatus.textContent = "Login to save your scores";
+      return;
+    }
+
+    if (saveStatus) saveStatus.textContent = "Saving score...";
+
+    const gameStatus = questionCount >= MAX_QUESTIONS ? "completed" : "timeout";
+
+    const scoreRes = await fetch("/api/scores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        difficulty: selectedDifficulty,
+        score,
+        correctAnswers: correctAnswersCount,
+        totalQuestions: MAX_QUESTIONS,
+        gameStatus
+      })
+    });
+
+    if (scoreRes.ok) {
+      if (saveStatus) saveStatus.textContent = "Score saved to your profile!";
+    } else {
+      if (saveStatus) saveStatus.textContent = "Could not save score";
+    }
+  } catch (err) {
+    console.warn("Auto-submit score error:", err);
+    if (saveStatus) saveStatus.textContent = "Could not save score";
+  }
 }
 
 function startTimer() {
