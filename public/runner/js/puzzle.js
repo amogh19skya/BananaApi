@@ -3,7 +3,7 @@
 // Pre-fetches Banana API puzzles and triggers bullet-time modal
 // ================================================================
 const PuzzleSystem = (() => {
-  let maxPuzzleTime = 8.0; // Dynamically set according to difficulty mode (8s, 5s, 3s)
+  let maxPuzzleTime = 60.0; // Dynamically set according to difficulty mode (60s, 40s, 25s)
 
   // Pre-fetched puzzle queue
   const puzzleQueue = [];

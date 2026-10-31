@@ -1,7 +1,7 @@
 // ================================================================
 // Banana Surfers – Main Game Loop
 // Direct 1-scene continuous runner flow with dynamic difficulty modes:
-// Easy (8s puzzle), Hard (5s puzzle), Extra Hard (3s puzzle)
+// Easy (60s puzzle), Hard (40s puzzle), Extra Hard (25s puzzle)
 // ================================================================
 const Game = (() => {
   // Difficulty Modes Configuration
@@ -9,9 +9,9 @@ const Game = (() => {
     easy: {
       key: "easy",
       name: "Easy",
-      badge: "🌱 EASY (8s)",
+      badge: "🌱 EASY (60s)",
       badgeIcon: "🌱",
-      puzzleTime: 8.0, // 8 seconds to solve puzzle!
+      puzzleTime: 60.0, // 60 seconds to solve puzzle!
       baseSpeed: 14.0, // Relaxed speed
       maxSpeed: 28.0,
       multiplier: 1.0
@@ -19,9 +19,9 @@ const Game = (() => {
     hard: {
       key: "hard",
       name: "Hard",
-      badge: "⚡ HARD (5s)",
+      badge: "⚡ HARD (40s)",
       badgeIcon: "⚡",
-      puzzleTime: 5.0, // 5 seconds to solve puzzle!
+      puzzleTime: 40.0, // 40 seconds to solve puzzle!
       baseSpeed: 18.0, // Fast arcade runner speed
       maxSpeed: 36.0,
       multiplier: 1.5
@@ -29,9 +29,9 @@ const Game = (() => {
     extraHard: {
       key: "extraHard",
       name: "Extra Hard",
-      badge: "🔥 EXTRA HARD (3s)",
+      badge: "🔥 EXTRA HARD (25s)",
       badgeIcon: "🔥",
-      puzzleTime: 3.0, // 3 seconds to solve puzzle! Rapid reflex!
+      puzzleTime: 25.0, // 25 seconds to solve puzzle! Rapid reflex!
       baseSpeed: 22.0, // Blistering speed
       maxSpeed: 42.0,
       multiplier: 2.0
