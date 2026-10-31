@@ -1,4 +1,3 @@
-
 const image = document.querySelector("#puzzle-image");
 const loading = document.querySelector("#loading");
 const status = document.querySelector("#status");
@@ -21,6 +20,88 @@ let questionActive = false;
 let gameActive = false;
 let timerId = null;
 
+// ==========================================
+// Professional Audio & Sound Effects System
+// ==========================================
+const countdownSound = new Audio("sounds/countdown.mp3");
+const correctSound = new Audio("sounds/correct.mp3");
+const wrongSound = new Audio("sounds/wrong.mp3");
+
+// Preload audio files so they trigger with zero latency
+countdownSound.preload = "auto";
+correctSound.preload = "auto";
+wrongSound.preload = "auto";
+
+// Balanced, noticeable, but not excessively loud volume levels
+countdownSound.volume = 0.6;
+correctSound.volume = 0.65;
+wrongSound.volume = 0.55;
+
+let isAudioUnlocked = false;
+
+// Initialize / unlock audio on first user gesture (e.g., clicking Start Game)
+function unlockAudio() {
+  if (isAudioUnlocked) return;
+  [countdownSound, correctSound, wrongSound].forEach((audio) => {
+    audio.load();
+  });
+  isAudioUnlocked = true;
+}
+
+// Safely play an audio element, catching browser autoplay or interruption errors
+function safePlay(audio) {
+  const promise = audio.play();
+  if (promise !== undefined) {
+    promise.catch((err) => {
+      // Browser autoplay policy or interruption handled gracefully
+      console.warn("Audio playback prevented or interrupted:", err.message);
+    });
+  }
+}
+
+// Stop a specific audio element and rewind to beginning
+function stopSound(audio) {
+  audio.pause();
+  audio.currentTime = 0;
+}
+
+// Stop all sound effects immediately
+function stopAllSounds() {
+  stopSound(countdownSound);
+  stopSound(correctSound);
+  stopSound(wrongSound);
+}
+
+// Play celebratory sound on correct answer (plays once, doesn't overlap)
+function playCorrectSound() {
+  stopSound(wrongSound);
+  stopSound(correctSound);
+  safePlay(correctSound);
+}
+
+// Play buzzer / error sound on incorrect answer (plays once, doesn't overlap)
+function playWrongSound() {
+  stopSound(correctSound);
+  stopSound(wrongSound);
+  safePlay(wrongSound);
+}
+
+// Play countdown ticking / beeping during the final 10 seconds
+function playCountdownSound(secondsRemaining) {
+  // If the audio file is a continuous multi-second countdown track (> 2s),
+  // start it once and let it play smoothly through the final 10 seconds.
+  if (!isNaN(countdownSound.duration) && countdownSound.duration > 2) {
+    if (countdownSound.paused) {
+      countdownSound.currentTime = 0;
+      safePlay(countdownSound);
+    }
+  } else {
+    // If it's a short 1-second tick/beep sound file, trigger it each second without overlapping
+    stopSound(countdownSound);
+    safePlay(countdownSound);
+  }
+}
+
 function setStatus(message) {
   status.textContent = message;
 }
@@ -30,6 +111,7 @@ function stopTimer() {
     clearInterval(timerId);
     timerId = null;
   }
+  stopSound(countdownSound);
 }
 
 function finishGame(message) {
@@ -37,6 +119,7 @@ function finishGame(message) {
   questionActive = false;
 
   stopTimer();
+  stopSound(countdownSound);
 
   answerInput.disabled = true;
   submitButton.disabled = true;
@@ -55,6 +138,7 @@ function startTimer() {
   timerId = setInterval(() => {
     if (!gameActive) {
       stopTimer();
+      stopSound(countdownSound);
       return;
     }
 
@@ -62,11 +146,18 @@ function startTimer() {
     timeDisplay.textContent = `${timeLeft}s`;
 
     // Turn the timer red during the final 10 seconds.
-    timeDisplay.classList.toggle("urgent", timeLeft <= 10);
+    const isUrgent = timeLeft <= 10;
+    timeDisplay.classList.toggle("urgent", isUrgent);
+
+    // Countdown sound: only during final 10 seconds (never during first 50 seconds)
+    if (timeLeft <= 10 && timeLeft > 0) {
+      playCountdownSound(timeLeft);
+    }
 
     if (timeLeft <= 0) {
       timeLeft = 0;
       timeDisplay.textContent = "0s";
+      stopAllSounds();
       finishGame("⏰ Time's up!");
     }
   }, 1000);
@@ -126,6 +217,9 @@ async function loadQuestion() {
 
 // Event-driven programming: start or restart the game.
 startButton.addEventListener("click", async () => {
+  // Unlock audio and reset previous sounds on player interaction
+  unlockAudio();
+  stopAllSounds();
   stopTimer();
 
   score = 0;
@@ -138,7 +232,7 @@ startButton.addEventListener("click", async () => {
   questionNumber.textContent = `1 / ${MAX_QUESTIONS}`;
   timeDisplay.textContent = `${timeLeft}s`;
 
-  // IMPORTANT: reset the red timer colour when a new game starts.
+  // Reset the red timer colour when a new game starts.
   timeDisplay.classList.remove("urgent");
 
   startButton.disabled = true;
@@ -187,15 +281,20 @@ answerForm.addEventListener("submit", async (event) => {
     }
 
     if (data.correct) {
+      // 1. Play celebration sound
+      playCorrectSound();
+
+      // 2. Increment score & question count
       score += POINTS_PER_ANSWER;
       questionCount += 1;
 
       scoreDisplay.textContent = String(score);
-
       questionNumber.textContent =
         `${Math.min(questionCount + 1, MAX_QUESTIONS)} / ${MAX_QUESTIONS}`;
 
+      // Check if game is completed
       if (questionCount >= MAX_QUESTIONS) {
+        stopSound(countdownSound);
         finishGame("🏆 You completed all ten questions!");
         return;
       }
@@ -203,6 +302,10 @@ answerForm.addEventListener("submit", async (event) => {
       setStatus("✅ Correct! Loading the next puzzle…");
       await loadQuestion();
     } else {
+      // 1. Play buzzer / error sound
+      playWrongSound();
+
+      // 2. Keep existing incorrect answer feedback and allow retry
       questionActive = true;
       answerInput.disabled = false;
       submitButton.disabled = false;

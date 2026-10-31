@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+async function analyze(name) {
+  const resp = await fetch(name);
+  const buf = await resp.arrayBuffer();
+  const ctx = new OfflineAudioContext(1, 44100 * 30, 44100);
+  const audioBuffer = await ctx.decodeAudioData(buf);
+  const duration = audioBuffer.duration;
+  const channelData = audioBuffer.getChannelData(0);
+  
+  // Find peaks (>0.1 amplitude)
+  const peaks = [];
+  const step = 4410; // 0.1s
+  for (let i = 0; i < channelData.length; i += step) {
+    let max = 0;
+    for (let j = 0; j < step && i + j < channelData.length; j++) {
+      const v = Math.abs(channelData[i + j]);
+      if (v > max) max = v;
+    }
+    if (max > 0.05) {
+      peaks.push((i / 44100).toFixed(1) + 's:' + max.toFixed(2));
+    }
+  }
+  return { name, duration: duration.toFixed(2), peakCount: peaks.length, peaks: peaks.slice(0, 30) };
+}
+
+window.results = [];
+Promise.all([
+  analyze('countdown.mp3'),
+  analyze('correct.mp3'),
+  analyze('wrong.mp3')
+]).then(res => {
+  const pre = document.createElement('pre');
+  pre.id = 'output';
+  pre.textContent = JSON.stringify(res, null, 2);
+  document.body.appendChild(pre);
+});
+</script>
+</body>
+</html>
+
