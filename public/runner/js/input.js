@@ -1,11 +1,16 @@
 // ================================================================
 // Banana Surfers – Input Manager (Keyboard + Touch Swipe)
+// Supports tap, continuous key-hold, and touch swipe gestures
 // ================================================================
 const InputManager = (() => {
   const actions = {
     left: false, right: false,
     jump: false, slide: false,
     spaceDouble: false
+  };
+
+  const held = {
+    slide: false
   };
 
   let lastSpaceTime = 0;
@@ -20,7 +25,6 @@ const InputManager = (() => {
   };
 
   document.addEventListener("keydown", (e) => {
-    // Number keys 0-9 for puzzle solving are handled separately
     if (e.code === "Space") {
       e.preventDefault();
       const now = performance.now();
@@ -33,6 +37,16 @@ const InputManager = (() => {
     if (action) {
       e.preventDefault();
       actions[action] = true;
+      if (action === "slide") {
+        held.slide = true;
+      }
+    }
+  });
+
+  document.addEventListener("keyup", (e) => {
+    const action = keyMap[e.code];
+    if (action === "slide") {
+      held.slide = false;
     }
   });
 
@@ -58,7 +72,20 @@ const InputManager = (() => {
       lastTapTime = now;
     }, { passive: true });
 
+    touchZone.addEventListener("touchmove", (e) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        const dy = touch.clientY - touchStartY;
+        // If swiping down and holding
+        if (dy > MIN_SWIPE) {
+          actions.slide = true;
+          held.slide = true;
+        }
+      }
+    }, { passive: true });
+
     touchZone.addEventListener("touchend", (e) => {
+      held.slide = false;
       const touch = e.changedTouches[0];
       const dx = touch.clientX - touchStartX;
       const dy = touch.clientY - touchStartY;
@@ -76,10 +103,24 @@ const InputManager = (() => {
         actions[dx > 0 ? "right" : "left"] = true;
       } else {
         // Vertical swipe
-        actions[dy < 0 ? "jump" : "slide"] = true;
+        if (dy < 0) {
+          actions.jump = true;
+        } else {
+          actions.slide = true;
+        }
       }
     }, { passive: true });
+
+    touchZone.addEventListener("touchcancel", () => {
+      held.slide = false;
+    });
   }
+
+  // Window blur: release all held keys
+  window.addEventListener("blur", () => {
+    held.slide = false;
+    for (const k in actions) actions[k] = false;
+  });
 
   return {
     /** Consume an action (returns true once then auto-resets) */
@@ -90,6 +131,10 @@ const InputManager = (() => {
       }
       return false;
     },
+    /** Check if key/button is actively being held down */
+    isHeld(action) {
+      return !!held[action];
+    },
     /** Peek without consuming */
     peek(action) {
       return actions[action];
@@ -97,7 +142,7 @@ const InputManager = (() => {
     /** Reset all */
     reset() {
       for (const k in actions) actions[k] = false;
+      for (const k in held) held[k] = false;
     }
   };
 })();
-

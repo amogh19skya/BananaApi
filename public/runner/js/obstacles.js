@@ -21,9 +21,12 @@ const Obstacles = (() => {
   const matFull = new THREE.MeshStandardMaterial({ color: 0x555577, roughness: 0.7 });
 
   // Obstacle type definitions
+  // LOW: Hurdle (0.0 to 0.75m) - must jump over. Sliding will crash!
+  // HIGH: Overhead beam (0.75m to 1.55m) - must slide under. Standing/running will crash!
+  // FULL: Barrier wall (0.0 to 2.5m) - must switch lane.
   const TYPES = {
-    LOW: { height: 0.7, width: 2.0, depth: 0.5, yOffset: 0.35, mat: matLow, label: "low" },
-    HIGH: { height: 0.4, width: 2.2, depth: 0.5, yOffset: 2.2, mat: matHigh, label: "high" },
+    LOW: { height: 0.75, width: 2.0, depth: 0.5, yOffset: 0.375, mat: matLow, label: "low" },
+    HIGH: { height: 0.8, width: 2.2, depth: 0.5, yOffset: 1.15, mat: matHigh, label: "high" },
     FULL: { height: 2.5, width: 2.0, depth: 0.6, yOffset: 1.25, mat: matFull, label: "full" }
   };
 
@@ -96,15 +99,22 @@ const Obstacles = (() => {
       mesh.add(stripe);
     }
     if (typeName === "HIGH") {
-      // Supporting columns on sides
-      const colGeo = new THREE.BoxGeometry(0.15, 2.2, 0.15);
+      // Supporting arch columns on sides (height down to ground)
+      const colGeo = new THREE.BoxGeometry(0.15, 1.2, 0.15);
       const colMat = new THREE.MeshStandardMaterial({ color: 0x6633aa });
       const colL = new THREE.Mesh(colGeo, colMat);
-      colL.position.set(-tdef.width / 2 + 0.1, -0.9, 0);
+      colL.position.set(-tdef.width / 2 + 0.1, -0.5, 0);
       mesh.add(colL);
       const colR = new THREE.Mesh(colGeo, colMat);
-      colR.position.set(tdef.width / 2 - 0.1, -0.9, 0);
+      colR.position.set(tdef.width / 2 - 0.1, -0.5, 0);
       mesh.add(colR);
+
+      // Warning neon strip on the underside of the high beam
+      const warnGeo = new THREE.BoxGeometry(tdef.width, 0.06, tdef.depth + 0.05);
+      const warnMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0xa855f7, emissiveIntensity: 0.8 });
+      const warn = new THREE.Mesh(warnGeo, warnMat);
+      warn.position.y = -tdef.height / 2;
+      mesh.add(warn);
     }
 
     scene.add(mesh);
@@ -154,7 +164,7 @@ const Obstacles = (() => {
       ob.y = obs.mesh.position.y - ob.h / 2;
       ob.z = obs.mesh.position.z - ob.d / 2;
 
-      // AABB intersection test
+      // AABB intersection test in 3D space
       if (
         playerBox.x < ob.x + ob.w &&
         playerBox.x + playerBox.w > ob.x &&
@@ -163,9 +173,28 @@ const Obstacles = (() => {
         playerBox.z < ob.z + ob.d &&
         playerBox.z + playerBox.d > ob.z
       ) {
-        // Check if the player can avoid via jump/slide
-        if (obs.type === "LOW" && playerBox.y > ob.y + ob.h * 0.7) continue; // jumped over
-        if (obs.type === "HIGH" && playerBox.y + playerBox.h < ob.y + 0.2) continue; // slid under
+        // Physical avoidance checks based on actual obstacle type and player action:
+        // 1. LOW Obstacle: Can ONLY be avoided by jumping OVER it (playerBox.y above obstacle top)
+        if (obs.type === "LOW") {
+          if (playerBox.y >= ob.y + ob.h - 0.05) {
+            continue; // Successfully cleared jump over barrier
+          }
+          // If sliding or running normally, collision occurs!
+          return obs;
+        }
+
+        // 2. HIGH Obstacle: Can ONLY be avoided by SLIDING underneath it
+        if (obs.type === "HIGH") {
+          // Player must be actively sliding (playerBox.h is reduced to SLIDE_HEIGHT)
+          // AND the player's top must be below the clearance of the overhead obstacle
+          if (playerBox.isSliding && (playerBox.y + playerBox.h <= ob.y + 0.1)) {
+            continue; // Successfully slid under overhead beam
+          }
+          // If standing/running normally or jumping, collision occurs!
+          return obs;
+        }
+
+        // 3. FULL Obstacle: Cannot be jumped over or slid under; must change lanes
         return obs;
       }
     }

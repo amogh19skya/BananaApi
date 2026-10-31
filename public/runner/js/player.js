@@ -391,8 +391,14 @@ const Player = (() => {
     }
 
     // ---- Slide State ----
+    // Stay sliding if DOWN key is held, or if slide timer is still running
     if (isSliding) {
-      slideTimer -= delta;
+      if (InputManager.isHeld("slide")) {
+        slideTimer = 0.2; // Keep alive while held
+      } else {
+        slideTimer -= delta;
+      }
+
       if (slideTimer <= 0) {
         isSliding = false;
         slideTimer = 0;
@@ -481,14 +487,15 @@ const Player = (() => {
       }
     }
 
-    // Slide
-    if (InputManager.consume("slide")) {
+    // Slide / Fast-fall
+    const slideRequested = InputManager.consume("slide") || InputManager.isHeld("slide");
+    if (slideRequested) {
       if (isJumping) {
         velocityY = -BASE_JUMP_VELOCITY * 1.8;
-      } else if (!isSliding && !isJetpackActive) {
+      } else if (!isJetpackActive) {
+        if (!isSliding) AudioEngine.playSlide();
         isSliding = true;
         slideTimer = SLIDE_DURATION;
-        AudioEngine.playSlide();
       }
     }
   }
@@ -516,17 +523,20 @@ const Player = (() => {
 
   function getCollisionBox() {
     if (!rootGroup) return null;
+    // Ground level is at y = (rootGroup.position.y - NORMAL_HEIGHT / 2)
+    const groundY = rootGroup.position.y - NORMAL_HEIGHT / 2;
     const h = isSliding ? SLIDE_HEIGHT : NORMAL_HEIGHT;
     return {
       x: rootGroup.position.x - bbox.width / 2,
-      y: rootGroup.position.y - h / 2,
+      y: groundY,
       z: rootGroup.position.z - bbox.depth / 2,
       w: bbox.width,
       h: h,
       d: bbox.depth,
       centerX: rootGroup.position.x,
-      centerY: rootGroup.position.y,
-      centerZ: rootGroup.position.z
+      centerY: groundY + h / 2,
+      centerZ: rootGroup.position.z,
+      isSliding: isSliding
     };
   }
 
