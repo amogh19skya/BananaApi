@@ -3,186 +3,304 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Banana Surfers – 3D Endless Runner</title>
-  <link rel="stylesheet" href="runner/css/runner.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Banana Brain Quest - Arcade Puzzle Arena</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="app.js" defer></script>
 </head>
 
 <body>
   <!-- ======================================================== -->
-  <!-- Three.js 3D Canvas (full viewport)                       -->
+  <!-- 1. Animated Opening Screen (Arcade Dark Purple & Gold)   -->
   <!-- ======================================================== -->
-  <canvas id="runner-canvas"></canvas>
+  <aside id="intro-screen" class="intro-screen" aria-label="Game Opening Screen">
+    <div id="intro-particles" class="intro-particles" aria-hidden="true"></div>
 
-  <!-- ======================================================== -->
-  <!-- HUD Overlay (Modern Arcade Glassmorphism)                -->
-  <!-- ======================================================== -->
-  <div id="hud" class="hud">
-    <div class="hud-top">
-      <!-- Difficulty Mode Selector Pill -->
-      <div class="hud-pill hud-difficulty-container" id="difficulty-selector-pill">
-        <button id="difficulty-btn" class="difficulty-toggle-btn" type="button" title="Click to change difficulty & puzzle timer">
-          <span id="diff-badge-icon">🌱</span>
-          <span id="diff-badge-text">EASY (8s)</span>
-          <span class="diff-arrow">▾</span>
-        </button>
-        <div id="difficulty-menu" class="difficulty-dropdown hidden">
-          <button class="diff-option active" data-mode="easy" type="button">
-            <span class="diff-opt-icon">🌱</span>
-            <div class="diff-opt-info">
-              <strong>Easy</strong>
-              <small>8s Puzzle • 14 m/s</small>
-            </div>
-          </button>
-          <button class="diff-option" data-mode="hard" type="button">
-            <span class="diff-opt-icon">⚡</span>
-            <div class="diff-opt-info">
-              <strong>Hard</strong>
-              <small>5s Puzzle • 18 m/s</small>
-            </div>
-          </button>
-          <button class="diff-option" data-mode="extraHard" type="button">
-            <span class="diff-opt-icon">🔥</span>
-            <div class="diff-opt-info">
-              <strong>Extra Hard</strong>
-              <small>3s Puzzle • 22 m/s</small>
-            </div>
-          </button>
-        </div>
+    <button id="skip-intro-btn" class="skip-intro-btn" type="button" aria-label="Skip intro animation">
+      Skip Intro ⏭
+    </button>
+
+    <div class="intro-content">
+      <div class="intro-badge">
+        <span class="badge-dot"></span>
+        ARCADE PUZZLE ARENA
+        <span class="badge-dot"></span>
       </div>
 
-      <!-- Stats Pills -->
-      <div class="hud-pill hud-score">
-        <span class="hud-label">SCORE</span>
-        <span id="hud-score-value" class="hud-value">0</span>
-      </div>
-      <div class="hud-pill hud-distance">
-        <span class="hud-label">DISTANCE</span>
-        <span id="hud-distance-value" class="hud-value">0m</span>
-      </div>
-      <div class="hud-pill hud-bananas">
-        <span class="hud-icon">🍌</span>
-        <span id="hud-banana-count" class="hud-value">0</span>
-      </div>
-      <div class="hud-pill hud-multiplier hidden" id="hud-multiplier">
-        <span id="hud-multiplier-value" class="hud-multiplier-text">2X</span>
-      </div>
-    </div>
+      <h1 class="intro-title">
+        <span class="title-word title-banana">BANANA</span>
+        <span class="title-word title-brain">BRAIN</span>
+        <span class="title-word title-quest">QUEST</span>
+      </h1>
 
-    <!-- Active Power-Up Banner & Depleting Energy Bar -->
-    <div id="hud-powerup" class="hud-powerup hidden">
-      <div class="powerup-badge">
-        <span id="powerup-icon" class="powerup-icon">⚡</span>
-        <span id="powerup-name" class="powerup-name">SUPER POWER</span>
-      </div>
-      <div class="powerup-bar-bg">
-        <div id="powerup-bar-fill" class="powerup-bar-fill"></div>
-      </div>
-    </div>
+      <!-- Center Banana Mascot -->
+      <div class="mascot-wrapper">
+        <div class="mascot-glow-ring"></div>
+        <svg class="banana-mascot" viewBox="0 0 240 280" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated Banana Mascot">
+          <g class="mascot-body-group">
+            <path d="M 60,250 C 40,210 30,130 70,60 C 95,20 130,15 145,25 C 150,30 140,55 130,70 C 180,120 185,210 145,255 C 115,280 80,275 60,250 Z" fill="url(#bananaGrad)" stroke="#b8860b" stroke-width="4" stroke-linejoin="round" />
+            <path d="M 75,70 C 95,35 125,30 135,38 C 105,80 120,150 145,210 C 130,230 100,240 85,225 C 65,190 55,130 75,70 Z" fill="url(#highlightGrad)" opacity="0.45" />
+            <path d="M 140,24 C 145,15 152,10 156,12 C 160,14 158,24 150,28 Z" fill="#4d7c0f" stroke="#285006" stroke-width="2" />
+            <path d="M 58,248 C 54,254 50,258 48,256 C 45,252 50,245 55,242 Z" fill="#654321" />
 
-    <!-- Quick Navigation Links (Corner) -->
-    <div class="hud-corner-nav">
-      <a href="pages/leaderboard.html" class="corner-link">🏆 Leaderboard</a>
-      <a href="pages/dashboard.html" class="corner-link">👤 Dashboard</a>
-    </div>
-  </div>
+            <g class="mascot-accessories">
+              <path d="M 52,110 C 45,60 140,50 160,95" stroke="#a855f7" stroke-width="6" stroke-linecap="round" fill="none" />
+              <rect x="42" y="98" width="16" height="28" rx="8" fill="#ec4899" stroke="#ffd700" stroke-width="2" />
+              <rect x="152" y="88" width="16" height="28" rx="8" fill="#ec4899" stroke="#ffd700" stroke-width="2" />
+              <circle cx="50" cy="112" r="3" fill="#ffd700" class="headset-light" />
+              <circle cx="160" cy="102" r="3" fill="#ffd700" class="headset-light" />
+            </g>
 
-  <!-- ======================================================== -->
-  <!-- Puzzle Modal (Bullet-Time Overlay)                       -->
-  <!-- ======================================================== -->
-  <div id="puzzle-modal" class="puzzle-modal hidden">
-    <div class="puzzle-modal-content">
-      <div class="puzzle-header">
-        <div class="puzzle-timer-ring">
-          <svg viewBox="0 0 120 120">
-            <circle class="timer-ring-bg" cx="60" cy="60" r="54" />
-            <circle id="timer-ring-progress" class="timer-ring-progress" cx="60" cy="60" r="54" />
-          </svg>
-          <span id="puzzle-timer-text" class="puzzle-timer-text">8</span>
-        </div>
-        <div class="puzzle-title-box">
-          <div class="puzzle-mode-tag" id="puzzle-mode-tag">🌱 EASY MODE</div>
-          <h2 class="puzzle-title">📦 BANANA CRATE</h2>
-          <span class="puzzle-sub">Solve to unlock Super Power!</span>
-        </div>
+            <g class="mascot-face">
+              <g class="mascot-eye eye-left">
+                <ellipse cx="88" cy="118" rx="10" ry="13" fill="#1e1135" />
+                <circle cx="85" cy="113" r="4.5" fill="#ffffff" />
+                <circle cx="91" cy="122" r="2" fill="#ffffff" />
+              </g>
+              <g class="mascot-eye eye-right">
+                <ellipse cx="126" cy="114" rx="10" ry="13" fill="#1e1135" />
+                <circle cx="123" cy="109" r="4.5" fill="#ffffff" />
+                <circle cx="129" cy="118" r="2" fill="#ffffff" />
+              </g>
+              <circle cx="74" cy="128" r="8" fill="#ff4d88" opacity="0.6" />
+              <circle cx="138" cy="124" r="8" fill="#ff4d88" opacity="0.6" />
+              <path d="M 94,134 Q 108,152 122,132" stroke="#1e1135" stroke-width="4.5" stroke-linecap="round" fill="none" />
+              <path d="M 100,138 Q 108,148 116,137" fill="#ff4d88" />
+            </g>
+
+            <g class="mascot-hand-left">
+              <path d="M 52,150 Q 30,135 25,120 Q 22,115 28,112 Q 34,110 38,122 Q 44,115 50,128 Z" fill="#ffffff" stroke="#b8860b" stroke-width="2.5" />
+            </g>
+            <g class="mascot-hand-right">
+              <path d="M 160,145 Q 185,135 192,122 Q 196,116 190,112 Q 183,110 178,120 Q 172,112 165,126 Z" fill="#ffffff" stroke="#b8860b" stroke-width="2.5" />
+            </g>
+
+            <g class="brain-sparkles">
+              <polygon points="106,35 110,45 120,46 112,53 115,63 106,57 97,63 100,53 92,46 102,45" fill="#ffd700" class="sparkle sparkle-1" />
+              <polygon points="70,40 73,47 80,48 74,53 76,60 70,56 64,60 66,53 60,48 67,47" fill="#c084fc" class="sparkle sparkle-2" />
+            </g>
+          </g>
+
+          <defs>
+            <linearGradient id="bananaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fff580" />
+              <stop offset="35%" stop-color="#ffd700" />
+              <stop offset="80%" stop-color="#ffb700" />
+              <stop offset="100%" stop-color="#f59e0b" />
+            </linearGradient>
+            <linearGradient id="highlightGrad" x1="0%" y1="0%" x2="100%" y2="80%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+              <stop offset="100%" stop-color="#fff7aa" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="mascot-floor-shadow"></div>
       </div>
 
-      <div class="puzzle-image-frame">
-        <img id="puzzle-image" alt="Banana Equation Puzzle" />
-        <div id="puzzle-loading" class="puzzle-loading">Fetching Banana API Puzzle…</div>
+      <p class="intro-tagline">
+        <span class="tagline-word">THINK FAST.</span>
+        <span class="tagline-word">SOLVE SMART.</span>
+        <span class="tagline-word">BEAT THE CLOCK.</span>
+      </p>
+
+      <div class="intro-info-badge">
+        <span class="info-item"><span class="info-icon">🎯</span> 10 QUESTIONS</span>
+        <span class="info-divider">✦</span>
+        <span class="info-item"><span class="info-icon">⚡</span> 3 DIFFICULTY MODES</span>
       </div>
 
-      <!-- Powerup Grant Announcement Splash (Shows on correct) -->
-      <div id="puzzle-reward-splash" class="puzzle-reward-splash hidden">
-        <span id="reward-icon" class="reward-icon">🚀</span>
-        <h3 id="reward-title" class="reward-title">JETPACK ACTIVATED!</h3>
-        <p class="reward-desc">Fly above all obstacles and harvest sky bananas!</p>
-      </div>
-
-      <p class="puzzle-instruction" id="puzzle-instruction">Tap the missing number (0 – 9):</p>
-      
-      <div class="puzzle-numpad" id="puzzle-numpad">
-        <button class="numpad-key" data-num="1">1</button>
-        <button class="numpad-key" data-num="2">2</button>
-        <button class="numpad-key" data-num="3">3</button>
-        <button class="numpad-key" data-num="4">4</button>
-        <button class="numpad-key" data-num="5">5</button>
-        <button class="numpad-key" data-num="6">6</button>
-        <button class="numpad-key" data-num="7">7</button>
-        <button class="numpad-key" data-num="8">8</button>
-        <button class="numpad-key" data-num="9">9</button>
-        <button class="numpad-key numpad-zero" data-num="0">0</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ======================================================== -->
-  <!-- In-Scene Game Over Card (Instant 1-Click Retry)           -->
-  <!-- ======================================================== -->
-  <div id="gameover-screen" class="gameover-screen hidden">
-    <div class="gameover-card">
-      <div class="gameover-banner">💥 CRASHED!</div>
-      <h2 class="gameover-title">RUN STATS</h2>
-      <div class="gameover-stats-grid">
-        <div class="go-stat-pill">
-          <span class="go-label">DIFFICULTY</span>
-          <span id="go-diff-badge" class="go-val" style="font-size: 16px;">🌱 EASY</span>
-        </div>
-        <div class="go-stat-pill">
-          <span class="go-label">SCORE</span>
-          <span id="go-score" class="go-val">0</span>
-        </div>
-        <div class="go-stat-pill">
-          <span class="go-label">DISTANCE</span>
-          <span id="go-distance" class="go-val">0m</span>
-        </div>
-        <div class="go-stat-pill">
-          <span class="go-label">🍌 COLLECTED</span>
-          <span id="go-bananas" class="go-val">0</span>
-        </div>
-      </div>
-      <div class="gameover-actions">
-        <button id="go-retry-btn" class="go-retry-btn" type="button">
-          🔄 RUN AGAIN
+      <div class="intro-action">
+        <button id="intro-start-button" class="intro-start-button" type="button">
+          <span class="btn-sparkle">⚡</span>
+          <span class="btn-text">START GAME</span>
+          <span class="btn-arrow">➔</span>
         </button>
       </div>
+
+      <p class="intro-hint">Click <strong>START GAME</strong> to choose your challenge mode</p>
     </div>
-  </div>
+  </aside>
 
-  <!-- Touch Controls Gesture Zone -->
-  <div id="touch-zone" class="touch-zone"></div>
+  <!-- ======================================================== -->
+  <!-- 2. Difficulty Selection Screen                           -->
+  <!-- ======================================================== -->
+  <section id="difficulty-screen" class="difficulty-screen hidden" aria-label="Difficulty Selection Screen">
+    <div class="difficulty-card-container">
+      <div class="difficulty-header">
+        <span class="eyebrow">READY TO PLAY?</span>
+        <h2 class="difficulty-main-title">CHOOSE YOUR DIFFICULTY</h2>
+        <p class="difficulty-subtitle">Pick your challenge level to test your puzzle speed, accuracy and logic!</p>
+      </div>
 
-  <!-- Scripts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="runner/js/audio.js"></script>
-  <script src="runner/js/input.js"></script>
-  <script src="runner/js/world.js"></script>
-  <script src="runner/js/player.js"></script>
-  <script src="runner/js/obstacles.js"></script>
-  <script src="runner/js/collectibles.js"></script>
-  <script src="runner/js/powerups.js"></script>
-  <script src="runner/js/puzzle.js"></script>
-  <script src="runner/js/game.js"></script>
+      <div class="difficulty-grid" role="group" aria-label="Difficulty Modes">
+        <!-- EASY CARD -->
+        <button class="difficulty-card mode-easy-card" type="button" data-difficulty="easy" aria-label="Select Easy Mode: 60 seconds, 10 points per answer">
+          <div class="card-glow-bg"></div>
+          <div class="card-top-row">
+            <span class="mode-badge badge-easy">🌱 EASY</span>
+            <span class="mode-pts-pill">⭐ 10 PTS</span>
+          </div>
+          <div class="card-timer-stat">
+            <span class="timer-stat-icon">⏱️</span>
+            <span class="timer-stat-num">60</span>
+            <span class="timer-stat-unit">SECONDS</span>
+          </div>
+          <p class="card-desc">Relax, think and solve the puzzles.</p>
+          <div class="card-select-hint">SELECT EASY ➔</div>
+        </button>
+
+        <!-- HARD CARD -->
+        <button class="difficulty-card mode-hard-card" type="button" data-difficulty="hard" aria-label="Select Hard Mode: 40 seconds, 15 points per answer">
+          <div class="card-glow-bg"></div>
+          <div class="card-top-row">
+            <span class="mode-badge badge-hard">⚡ HARD</span>
+            <span class="mode-pts-pill">⭐ 15 PTS</span>
+          </div>
+          <div class="card-timer-stat">
+            <span class="timer-stat-icon">⏱️</span>
+            <span class="timer-stat-num">40</span>
+            <span class="timer-stat-unit">SECONDS</span>
+          </div>
+          <p class="card-desc">Challenge your brain and think faster.</p>
+          <div class="card-select-hint">SELECT HARD ➔</div>
+        </button>
+
+        <!-- EXTRA HARD CARD -->
+        <button class="difficulty-card mode-extra-hard-card" type="button" data-difficulty="extraHard" aria-label="Select Extra Hard Mode: 25 seconds, 20 points per answer">
+          <div class="card-glow-bg"></div>
+          <div class="card-top-row">
+            <span class="mode-badge badge-extra-hard">🔥 EXTRA HARD</span>
+            <span class="mode-pts-pill">⭐ 20 PTS</span>
+          </div>
+          <div class="card-timer-stat">
+            <span class="timer-stat-icon">⏱️</span>
+            <span class="timer-stat-num">25</span>
+            <span class="timer-stat-unit">SECONDS</span>
+          </div>
+          <p class="card-desc">For expert puzzle solvers. Think fast!</p>
+          <div class="card-select-hint">SELECT EXTRA HARD ➔</div>
+        </button>
+      </div>
+
+      <div class="difficulty-footer">
+        <p class="difficulty-note">All modes feature exactly 10 questions with official Banana API puzzles.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- 3. Main Game Card (Active Gameplay Screen)               -->
+  <!-- ======================================================== -->
+  <main id="game-card" class="game-card">
+    <div class="game-header-row">
+      <div>
+        <p class="eyebrow">THE DAILY BRAIN CHALLENGE</p>
+        <h1>🍌 Banana Brain Quest</h1>
+      </div>
+      <button id="change-difficulty-btn" class="change-mode-pill" type="button" title="Change difficulty mode">
+        <span id="current-mode-badge" class="mode-pill-badge">EASY</span>
+        <span class="mode-pill-icon">⚙️</span>
+      </button>
+    </div>
+    <p class="subtitle">Look at the picture. Enter the missing number.</p>
+
+    <div class="stats">
+      <div>
+        <span>Mode</span>
+        <strong id="mode-stat-display">Easy</strong>
+      </div>
+      <div>
+        <span>Score</span>
+        <strong id="score">0</strong>
+      </div>
+      <div>
+        <span>Question</span>
+        <strong id="question-number">1 / 10</strong>
+      </div>
+      <div>
+        <span>Time left</span>
+        <strong id="time-left">60s</strong>
+      </div>
+    </div>
+
+    <div id="status" class="status" role="status" aria-live="polite">
+      Press Start Game when you're ready.
+    </div>
+
+    <div class="puzzle-frame">
+      <img id="puzzle-image" alt="Banana number puzzle" hidden />
+      <div id="loading">Your first puzzle is waiting…</div>
+    </div>
+
+    <form id="answer-form">
+      <label for="answer">Your answer</label>
+      <input id="answer" type="number" step="1" inputmode="numeric" placeholder="Enter a number" required disabled />
+      <button id="submit-button" type="submit" disabled>
+        Check answer
+      </button>
+    </form>
+
+    <button id="start-button" class="secondary-button" type="button">
+      Start Game
+    </button>
+    <div class="footer-row">
+      <p class="footer">Think carefully. Trust your logic. &nbsp;|&nbsp; <a class="nav-link" href="pages/login.html" style="color: var(--arcade-gold); text-decoration: none;">👤 Login</a> &nbsp;|&nbsp; <a class="nav-link" href="pages/dashboard.html" style="color: var(--arcade-gold); text-decoration: none;">📊 Dashboard</a> &nbsp;|&nbsp; <a class="nav-link" href="pages/leaderboard.html" style="color: var(--arcade-gold); text-decoration: none;">🏆 Leaderboard</a></p>
+      <button id="replay-intro-btn" class="replay-intro-btn" type="button" aria-label="Replay opening intro">🎬 Opening Screen</button>
+    </div>
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- 4. Results Screen                                        -->
+  <!-- ======================================================== -->
+  <section id="results-screen" class="results-screen hidden" aria-label="Game Results Screen">
+    <div class="results-card">
+      <div class="results-banner">
+        <span id="results-icon" class="results-banner-icon">🏆</span>
+        <h2 id="results-title" class="results-banner-title">CHALLENGE COMPLETE!</h2>
+        <p id="results-message" class="results-banner-message">Outstanding performance! Here is your breakdown:</p>
+      </div>
+
+      <!-- Hero Score Box -->
+      <div class="results-score-hero">
+        <span class="results-hero-label">FINAL SCORE</span>
+        <span id="results-final-score" class="results-hero-score">0</span>
+        <span id="results-pts-rate" class="results-hero-sub">Points Awarded</span>
+      </div>
+
+      <!-- Results Stats Grid -->
+      <div class="results-stats-grid">
+        <div class="results-stat-box">
+          <span class="rstat-label">DIFFICULTY</span>
+          <span id="results-difficulty-badge" class="rstat-badge badge-easy">EASY</span>
+        </div>
+        <div class="results-stat-box">
+          <span class="rstat-label">CORRECT ANSWERS</span>
+          <strong id="results-correct-count" class="rstat-value">0 / 10</strong>
+        </div>
+        <div class="results-stat-box">
+          <span class="rstat-label">ACCURACY</span>
+          <strong id="results-accuracy" class="rstat-value">0%</strong>
+        </div>
+        <div class="results-stat-box">
+          <span class="rstat-label">TIME</span>
+          <strong id="results-time-stat" class="rstat-value">--</strong>
+        </div>
+      </div>
+
+      <!-- Score Save Status -->
+      <p id="save-status" style="text-align:center; color: var(--arcade-gold); font-size: 0.9rem; margin: 8px 0;"></p>
+
+      <!-- Results Action Buttons -->
+      <div class="results-actions">
+        <button id="results-play-again-btn" class="results-btn-primary" type="button">
+          Play Again 🔄
+        </button>
+        <button id="results-change-difficulty-btn" class="results-btn-secondary" type="button">
+          Change Difficulty ⚙️
+        </button>
+      </div>
+    </div>
+  </section>
 </body>
 
 </html>
