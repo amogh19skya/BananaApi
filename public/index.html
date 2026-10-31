@@ -23,29 +23,29 @@
       <div class="hud-pill hud-difficulty-container" id="difficulty-selector-pill">
         <button id="difficulty-btn" class="difficulty-toggle-btn" type="button" title="Click to change difficulty & puzzle timer">
           <span id="diff-badge-icon">🌱</span>
-          <span id="diff-badge-text">EASY (8s)</span>
+          <span id="diff-badge-text">EASY (60s)</span>
           <span class="diff-arrow">▾</span>
         </button>
         <div id="difficulty-menu" class="difficulty-dropdown hidden">
           <button class="diff-option active" data-mode="easy" type="button">
             <span class="diff-opt-icon">🌱</span>
             <div class="diff-opt-info">
-              <strong>Easy</strong>
-              <small>8s Puzzle • 14 m/s</small>
+              <strong>EASY (60s)</strong>
+              <small>60s Puzzle • 14 m/s</small>
             </div>
           </button>
           <button class="diff-option" data-mode="hard" type="button">
             <span class="diff-opt-icon">⚡</span>
             <div class="diff-opt-info">
-              <strong>Hard</strong>
-              <small>5s Puzzle • 18 m/s</small>
+              <strong>HARD (40s)</strong>
+              <small>40s Puzzle • 18 m/s</small>
             </div>
           </button>
           <button class="diff-option" data-mode="extraHard" type="button">
             <span class="diff-opt-icon">🔥</span>
             <div class="diff-opt-info">
-              <strong>Extra Hard</strong>
-              <small>3s Puzzle • 22 m/s</small>
+              <strong>EXTRA HARD (25s)</strong>
+              <small>25s Puzzle • 22 m/s</small>
             </div>
           </button>
         </div>
@@ -56,7 +56,7 @@
         <span class="hud-label">SCORE</span>
         <span id="hud-score-value" class="hud-value">0</span>
       </div>
-      <div class="hud-pill hud-distance">
+      <div class="hud-distance">
         <span class="hud-label">DISTANCE</span>
         <span id="hud-distance-value" class="hud-value">0m</span>
       </div>
@@ -112,11 +112,15 @@
         <div id="puzzle-loading" class="puzzle-loading">Fetching Banana API Puzzle…</div>
       </div>
 
-      <!-- Powerup Grant Announcement Splash (Shows on correct) -->
+      <!-- Powerup Announcement Popup (Shows on correct answer) -->
       <div id="puzzle-reward-splash" class="puzzle-reward-splash hidden">
+        <div class="reward-success-badge">✅ CORRECT ANSWER!</div>
         <span id="reward-icon" class="reward-icon">🚀</span>
-        <h3 id="reward-title" class="reward-title">JETPACK ACTIVATED!</h3>
-        <p class="reward-desc">Fly above all obstacles and harvest sky bananas!</p>
+        <h3 id="reward-title" class="reward-title">BANANA JETPACK</h3>
+        <p id="reward-desc" class="reward-desc">Fly above all hazards and collect sky bananas!</p>
+        <button id="activate-power-btn" class="activate-power-btn" type="button">
+          ⚡ ACTIVATE POWER
+        </button>
       </div>
 
       <p class="puzzle-instruction" id="puzzle-instruction">Tap the missing number (0 – 9):</p>
@@ -141,7 +145,7 @@
   <!-- ======================================================== -->
   <div id="gameover-screen" class="gameover-screen hidden">
     <div class="gameover-card">
-      <div class="gameover-banner">💥 CRASHED!</div>
+      <div id="gameover-banner" class="gameover-banner">💥 CRASHED!</div>
       <h2 class="gameover-title">RUN STATS</h2>
       <div class="gameover-stats-grid">
         <div class="go-stat-pill">
