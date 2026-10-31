@@ -12,9 +12,9 @@ const Collectibles = (() => {
   const BANANA_RADIUS = 0.28;
 
   // Crate spawning frequency – fast first encounter then regular intervals
-  const FIRST_CRATE_DISTANCE = 45; // First crate appears at 45m
-  const CRATE_INTERVAL_MIN = 110;
-  const CRATE_INTERVAL_MAX = 170;
+  const FIRST_CRATE_DISTANCE = 25; // First crate appears at 25m
+  const CRATE_INTERVAL_MIN = 60;
+  const CRATE_INTERVAL_MAX = 90;
 
   let scene = null;
   const bananas = [];
@@ -134,8 +134,8 @@ const Collectibles = (() => {
     }
 
     // Spawn crates ahead
-    if (playerZ <= nextCrateZ) {
-      spawnCrate(nextCrateZ - 35);
+    while (nextCrateZ > playerZ - World.CHUNK_LENGTH * World.VISIBLE_CHUNKS * 0.7) {
+      spawnCrate(nextCrateZ);
       nextCrateZ -= (CRATE_INTERVAL_MIN + Math.random() * (CRATE_INTERVAL_MAX - CRATE_INTERVAL_MIN));
     }
 
@@ -229,12 +229,12 @@ const Collectibles = (() => {
       const cx = c.mesh.position.x;
       const cy = c.mesh.position.y;
       const cz = c.mesh.position.z;
-      const halfSize = 0.65;
+      const halfSize = 1.1; // Generous trigger zone
 
       if (
         Math.abs(cx - playerBox.centerX) < halfSize + playerBox.w / 2 &&
-        Math.abs(cy - playerBox.centerY) < halfSize + playerBox.h / 2 &&
-        Math.abs(cz - playerBox.centerZ) < halfSize + playerBox.d / 2
+        Math.abs(cy - playerBox.centerY) < halfSize + playerBox.h / 2 + 0.8 &&
+        Math.abs(cz - playerBox.centerZ) < halfSize + playerBox.d / 2 + 0.6
       ) {
         c.collected = true;
         scene.remove(c.mesh);

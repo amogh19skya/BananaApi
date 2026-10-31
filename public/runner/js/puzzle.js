@@ -67,17 +67,45 @@ const PuzzleSystem = (() => {
   }
 
   // ---- Show Puzzle in Bullet-Time ----
-  function showPuzzle(onComplete) {
-    const puzzle = puzzleQueue.shift();
-    currentPuzzle = puzzle;
+  async function showPuzzle(onComplete) {
     puzzleCallback = onComplete;
 
+    // Immediately open modal so user sees the crate opening
+    if (modal) modal.classList.remove("hidden");
+    if (rewardSplash) rewardSplash.classList.add("hidden");
+    if (numpad) numpad.style.display = "none";
+    if (puzzleInstruction) puzzleInstruction.style.display = "none";
+    if (puzzleImage) puzzleImage.style.display = "none";
+    if (puzzleLoading) {
+      puzzleLoading.style.display = "block";
+      puzzleLoading.textContent = "Opening Banana Crate Puzzle...";
+    }
+
+    let puzzle = puzzleQueue.shift();
     if (!puzzle) {
-      // Fallback: grant powerup directly if network timed out
-      const powerup = PowerupManager.getRandomPowerup();
-      onComplete({ solved: true, powerup, fallback: true });
+      try {
+        const res = await fetch("/api/runner/crate-puzzle");
+        if (res.ok) {
+          const data = await res.json();
+          puzzle = { puzzleId: data.puzzleId, imageUrl: data.imageUrl };
+        }
+      } catch (e) {
+        console.warn("Instant fetch error:", e);
+      }
+    }
+
+    if (!puzzle) {
+      if (puzzleLoading) puzzleLoading.textContent = "Puzzle unavailable. Keep running!";
+      setTimeout(() => {
+        hideModal();
+        if (puzzleCallback) puzzleCallback({ solved: false });
+      }, 1000);
       return;
     }
+
+    currentPuzzle = puzzle;
+    isPuzzleActive = true;
+    puzzleTimer = maxPuzzleTime;
 
     isPuzzleActive = true;
     puzzleTimer = maxPuzzleTime;
