@@ -112,11 +112,15 @@
         <div id="puzzle-loading" class="puzzle-loading">Fetching Banana API Puzzle…</div>
       </div>
 
-      <!-- Powerup Grant Announcement Splash (Shows on correct) -->
+      <!-- Powerup Announcement Popup (Shows on correct answer) -->
       <div id="puzzle-reward-splash" class="puzzle-reward-splash hidden">
+        <div class="reward-success-badge">✅ CORRECT ANSWER!</div>
         <span id="reward-icon" class="reward-icon">🚀</span>
-        <h3 id="reward-title" class="reward-title">JETPACK ACTIVATED!</h3>
-        <p class="reward-desc">Fly above all obstacles and harvest sky bananas!</p>
+        <h3 id="reward-title" class="reward-title">BANANA JETPACK</h3>
+        <p id="reward-desc" class="reward-desc">Fly above all hazards and collect sky bananas!</p>
+        <button id="activate-power-btn" class="activate-power-btn" type="button">
+          ⚡ ACTIVATE POWER
+        </button>
       </div>
 
       <p class="puzzle-instruction" id="puzzle-instruction">Tap the missing number (0 – 9):</p>
@@ -141,7 +145,7 @@
   <!-- ======================================================== -->
   <div id="gameover-screen" class="gameover-screen hidden">
     <div class="gameover-card">
-      <div class="gameover-banner">💥 CRASHED!</div>
+      <div id="gameover-banner" class="gameover-banner">💥 CRASHED!</div>
       <h2 class="gameover-title">RUN STATS</h2>
       <div class="gameover-stats-grid">
         <div class="go-stat-pill">

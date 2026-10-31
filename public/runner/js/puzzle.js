@@ -25,6 +25,8 @@ const PuzzleSystem = (() => {
   const rewardSplash = document.getElementById("puzzle-reward-splash");
   const rewardIcon = document.getElementById("reward-icon");
   const rewardTitle = document.getElementById("reward-title");
+  const rewardDesc = document.getElementById("reward-desc");
+  const activatePowerBtn = document.getElementById("activate-power-btn");
   const puzzleInstruction = document.getElementById("puzzle-instruction");
   const puzzleModeTag = document.getElementById("puzzle-mode-tag");
 
@@ -146,10 +148,12 @@ const PuzzleSystem = (() => {
     }
   }
 
+  let pendingPowerup = null;
+
   // ---- Answer Validation ----
   async function submitAnswer(num) {
     if (!isPuzzleActive) return;
-    isPuzzleActive = false; // Prevent double submit
+    isPuzzleActive = false; // Stop timer countdown & prevent double submit
 
     const puzzleId = currentPuzzle ? currentPuzzle.puzzleId : null;
 
@@ -163,31 +167,35 @@ const PuzzleSystem = (() => {
 
       if (data.correct) {
         AudioEngine.playCorrect();
-        const powerup = PowerupManager.getRandomPowerup();
+        pendingPowerup = PowerupManager.getRandomPowerup();
 
-        // Show celebratory superpower banner
-        if (rewardSplash && rewardTitle && rewardIcon) {
-          rewardIcon.textContent = powerup.icon;
-          rewardTitle.textContent = powerup.name + " ACTIVATED!";
+        // 1. Hide numpad & puzzle image to present announcement clearly
+        if (numpad) numpad.style.display = "none";
+        if (puzzleInstruction) puzzleInstruction.style.display = "none";
+        if (puzzleImage) puzzleImage.style.display = "none";
+
+        // 2. Display powerup announcement screen
+        if (rewardSplash) {
+          if (rewardIcon) rewardIcon.textContent = pendingPowerup.icon;
+          if (rewardTitle) rewardTitle.textContent = pendingPowerup.name;
+          if (rewardDesc) rewardDesc.textContent = pendingPowerup.desc;
           rewardSplash.classList.remove("hidden");
-          if (numpad) numpad.style.display = "none";
-          if (puzzleInstruction) puzzleInstruction.style.display = "none";
         }
-
-        // Brief punchy delay to appreciate the reward, then back to running
-        setTimeout(() => {
-          hideModal();
-          if (puzzleCallback) puzzleCallback({ solved: true, powerup });
-        }, 700);
       } else {
+        // Incorrect answer -> Immediately trigger Game Over
         AudioEngine.playWrong();
         hideModal();
-        if (puzzleCallback) puzzleCallback({ solved: false });
+        if (puzzleCallback) {
+          puzzleCallback({ solved: false, reason: "incorrect" });
+        }
       }
     } catch (e) {
+      // Network or API error -> Trigger Game Over
       AudioEngine.playWrong();
       hideModal();
-      if (puzzleCallback) puzzleCallback({ solved: false });
+      if (puzzleCallback) {
+        puzzleCallback({ solved: false, reason: "error" });
+      }
     }
   }
 
@@ -195,7 +203,9 @@ const PuzzleSystem = (() => {
     isPuzzleActive = false;
     AudioEngine.playWrong();
     hideModal();
-    if (puzzleCallback) puzzleCallback({ solved: false });
+    if (puzzleCallback) {
+      puzzleCallback({ solved: false, reason: "timeout" });
+    }
   }
 
   function hideModal() {
@@ -203,6 +213,7 @@ const PuzzleSystem = (() => {
     if (rewardSplash) rewardSplash.classList.add("hidden");
     currentPuzzle = null;
     isPuzzleActive = false;
+    pendingPowerup = null;
   }
 
   function update(delta) {
@@ -212,6 +223,18 @@ const PuzzleSystem = (() => {
     if (puzzleTimer <= 0) {
       timeOut();
     }
+  }
+
+  // ---- Activate Power Button Listener ----
+  if (activatePowerBtn) {
+    activatePowerBtn.addEventListener("click", () => {
+      if (!pendingPowerup) return;
+      const powerupToActivate = pendingPowerup;
+      hideModal();
+      if (puzzleCallback) {
+        puzzleCallback({ solved: true, powerup: powerupToActivate });
+      }
+    });
   }
 
   // ---- Click & Keyboard Listeners ----
@@ -225,6 +248,15 @@ const PuzzleSystem = (() => {
   }
 
   document.addEventListener("keydown", (e) => {
+    // If pending powerup announcement is open, Enter activates power
+    if (pendingPowerup && modal && !modal.classList.contains("hidden")) {
+      if (e.code === "Enter" || e.code === "Space") {
+        e.preventDefault();
+        if (activatePowerBtn) activatePowerBtn.click();
+        return;
+      }
+    }
+
     if (!isPuzzleActive) return;
     const num = parseInt(e.key, 10);
     if (!isNaN(num) && num >= 0 && num <= 9) {
@@ -234,6 +266,7 @@ const PuzzleSystem = (() => {
 
   function reset() {
     isPuzzleActive = false;
+    pendingPowerup = null;
     hideModal();
     puzzleQueue.length = 0;
   }

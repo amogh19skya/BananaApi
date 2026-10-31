@@ -63,6 +63,7 @@ const Game = (() => {
   const gameoverScreen = document.getElementById("gameover-screen");
   const goRetryBtn = document.getElementById("go-retry-btn");
   const goDiffBadge = document.getElementById("go-diff-badge");
+  const goBanner = document.getElementById("gameover-banner");
 
   // HUD elements
   const hudScoreValue = document.getElementById("hud-score-value");
@@ -197,13 +198,14 @@ const Game = (() => {
     lastTime = performance.now();
   }
 
-  function gameOver() {
+  function gameOver(reason = "💥 CRASHED!") {
     state = STATE.GAMEOVER;
     AudioEngine.playCrash();
 
     const runDuration = Math.max(1, Math.floor((performance.now() - runStartTime) / 1000));
 
     // Update in-scene Game Over Card
+    if (goBanner) goBanner.textContent = reason;
     if (goDistance) goDistance.textContent = Math.floor(distance) + "m";
     if (goScore) goScore.textContent = score;
     if (goBananas) goBananas.textContent = bananaCount;
@@ -320,13 +322,20 @@ const Game = (() => {
       timeDilation = 0.03;
 
       PuzzleSystem.showPuzzle((result) => {
-        // Return to normal speed
+        if (!result.solved) {
+          // If incorrect answer or timer expired: immediately end the game
+          timeDilation = 1.0;
+          gameOver("Puzzle not solved!");
+          return;
+        }
+
+        // Return to normal running speed
         state = STATE.RUNNING;
         timeDilation = 1.0;
 
-        if (result.solved && result.powerup) {
+        if (result.powerup) {
           cratesSolved++;
-          // Grant the Super Power to use during the run!
+          // Activate the power-up after player explicitly clicks "ACTIVATE POWER"
           PowerupManager.activate(result.powerup);
           score += Math.round(100 * PowerupManager.getMultiplier() * currentDifficulty.multiplier);
         }
