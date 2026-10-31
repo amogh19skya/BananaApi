@@ -60,7 +60,10 @@ app.get("/leaderboard", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "pages", "leaderboard.html"));
 });
 app.get("/runner", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "runner", "index.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+app.get("/quiz", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pages", "quiz.html"));
 });
 
 // Official Banana API, documented by the provider.
