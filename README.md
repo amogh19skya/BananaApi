@@ -210,3 +210,4 @@ main                          ← stable production branch
 Demonstrates: feature branching, meaningful commits, Pull Requests, code review, safe merging, version tagging.
 
 Version control evidence: [`docs/VERSION_CONTROL_EVIDENCE.md`](docs/VERSION_CONTROL_EVIDENCE.md)
+

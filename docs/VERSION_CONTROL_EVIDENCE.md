@@ -205,3 +205,4 @@ git push origin v1.0.0
 ---
 
 *Last updated: 2026-11-01 — commit `d4be7f1` pushed to `feature/game-history-statistics`*
+

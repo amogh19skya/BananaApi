@@ -51,45 +51,22 @@ const Player = (() => {
   const bbox = { width: 0.65, height: NORMAL_HEIGHT, depth: 0.65 };
 
   // ============================================================
-  // Avatar Construction (Custom 3D Banana Mascot)
+  // Avatar Construction — Ninja Billboard Sprite
+  // NinjaOne.png is loaded as a camera-facing PlaneGeometry billboard.
+  // All physics, collision, lane-switching, superpower attachments and
+  // animation state are fully preserved — only the visual mesh changes.
+  // Invisible dummy Groups keep animation code running without errors.
   // ============================================================
+
+  // Sprite mesh reference for pose transforms
+  let ninjaSpriteBase = null;
+
   function buildAvatar(scene) {
     rootGroup = new THREE.Group();
     bodyGroup = new THREE.Group();
     rootGroup.add(bodyGroup);
 
-    // ---- Materials ----
-    const bananaYellowMat = new THREE.MeshStandardMaterial({
-      color: 0xffd700,
-      roughness: 0.35,
-      metalness: 0.15,
-      emissive: 0xff9900,
-      emissiveIntensity: 0.1
-    });
-
-    const stemGreenMat = new THREE.MeshStandardMaterial({
-      color: 0x4d7c0f,
-      roughness: 0.6
-    });
-
-    const tipBrownMat = new THREE.MeshStandardMaterial({
-      color: 0x5b3a1a,
-      roughness: 0.8
-    });
-
-    const visorMat = new THREE.MeshStandardMaterial({
-      color: 0x06b6d4,
-      emissive: 0x0891b2,
-      emissiveIntensity: 0.6,
-      roughness: 0.1,
-      metalness: 0.9
-    });
-
-    const shoeMat = new THREE.MeshStandardMaterial({
-      color: 0xef4444,
-      roughness: 0.4
-    });
-
+    // ---- Shared materials for power-up attachments ----
     const chromeMat = new THREE.MeshStandardMaterial({
       color: 0xd1d5db,
       metalness: 0.9,
@@ -102,115 +79,61 @@ const Player = (() => {
       opacity: 0.85
     });
 
-    // ---- Torso (Curved Banana Body) ----
-    // Center torso
-    const torsoGeo = new THREE.CylinderGeometry(0.32, 0.28, 0.95, 12);
-    const torso = new THREE.Mesh(torsoGeo, bananaYellowMat);
-    torso.position.y = 0.55;
-    torso.castShadow = true;
-    bodyGroup.add(torso);
+    // ---- Ninja Sprite Billboard ----
+    // PlaneGeometry sized to match the character proportions.
+    // The plane rotates 180° so the ninja faces the -Z (running) direction.
+    const spriteW = 1.25;
+    const spriteH = 1.55;
+    const spriteGeo = new THREE.PlaneGeometry(spriteW, spriteH);
 
-    // Lower belly curve
-    const bellyGeo = new THREE.SphereGeometry(0.32, 12, 10);
-    bellyGeo.scale(1, 0.8, 1.15);
-    const belly = new THREE.Mesh(bellyGeo, bananaYellowMat);
-    belly.position.set(0, 0.35, 0.05);
-    bodyGroup.add(belly);
+    const spriteMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      alphaTest: 0.05,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      color: 0x777777    // dim placeholder tint until texture loads
+    });
 
-    // Bottom tip (Brown)
-    const botTipGeo = new THREE.ConeGeometry(0.18, 0.22, 8);
-    const botTip = new THREE.Mesh(botTipGeo, tipBrownMat);
-    botTip.rotation.x = Math.PI;
-    botTip.position.set(0, 0.12, 0);
-    bodyGroup.add(botTip);
+    ninjaSpriteBase = new THREE.Mesh(spriteGeo, spriteMat);
+    // Shift sprite up so feet align with y=0 (ground level of bodyGroup)
+    ninjaSpriteBase.position.set(0, spriteH / 2, 0);
+    // Face into the running direction (-Z)
+    ninjaSpriteBase.rotation.y = Math.PI;
+    bodyGroup.add(ninjaSpriteBase);
 
-    // ---- Head & Face ----
-    const headGeo = new THREE.SphereGeometry(0.3, 12, 12);
-    headMesh = new THREE.Mesh(headGeo, bananaYellowMat);
-    headMesh.position.set(0, 1.15, 0.05);
-    headMesh.castShadow = true;
-    bodyGroup.add(headMesh);
+    // Load the ninja texture asynchronously
+    new THREE.TextureLoader().load(
+      '/images/characters/NinjaOne.png',
+      function (tex) {
+        tex.magFilter = THREE.LinearFilter;
+        tex.minFilter = THREE.LinearMipmapLinearFilter;
+        tex.generateMipmaps = true;
+        if (ninjaSpriteBase) {
+          ninjaSpriteBase.material.map = tex;
+          ninjaSpriteBase.material.color.set(0xffffff); // full brightness
+          ninjaSpriteBase.material.needsUpdate = true;
+        }
+      },
+      undefined,
+      function (err) {
+        console.warn('Ninja texture failed to load — keeping placeholder:', err);
+        // Show a visible cyan box so the player can still play
+        if (ninjaSpriteBase) {
+          ninjaSpriteBase.material.color.set(0x00ffff);
+          ninjaSpriteBase.material.needsUpdate = true;
+        }
+      }
+    );
 
-    // Green Stem Cap on top of head
-    const stemGeo = new THREE.CylinderGeometry(0.08, 0.12, 0.25, 8);
-    const stem = new THREE.Mesh(stemGeo, stemGreenMat);
-    stem.position.set(0, 0.32, -0.05);
-    stem.rotation.x = -0.3;
-    headMesh.add(stem);
-
-    // Cyberpunk Visor / Sunglasses
-    const visorGeo = new THREE.BoxGeometry(0.48, 0.14, 0.2);
-    const visor = new THREE.Mesh(visorGeo, visorMat);
-    visor.position.set(0, 0.02, 0.24);
-    headMesh.add(visor);
-
-    // Banana Smile
-    const smileGeo = new THREE.TorusGeometry(0.12, 0.025, 8, 12, Math.PI);
-    const smileMat = new THREE.MeshBasicMaterial({ color: 0x3d1a00 });
-    const smile = new THREE.Mesh(smileGeo, smileMat);
-    smile.position.set(0, -0.14, 0.26);
-    smile.rotation.x = 0.3;
-    headMesh.add(smile);
-
-    // ---- Legs & Red Sneakers ----
-    function makeLeg(sideX) {
-      const legGroup = new THREE.Group();
-      legGroup.position.set(sideX, 0.22, 0);
-
-      // Upper leg
-      const legGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.42, 8);
-      const legMesh = new THREE.Mesh(legGeo, bananaYellowMat);
-      legMesh.position.y = -0.21;
-      legMesh.castShadow = true;
-      legGroup.add(legMesh);
-
-      // Red Sneaker Shoe
-      const shoeGeo = new THREE.BoxGeometry(0.16, 0.14, 0.32);
-      const shoe = new THREE.Mesh(shoeGeo, shoeMat);
-      shoe.position.set(0, -0.42, 0.06);
-      shoe.castShadow = true;
-      legGroup.add(shoe);
-
-      // Shoe sole (white)
-      const soleGeo = new THREE.BoxGeometry(0.18, 0.04, 0.34);
-      const soleMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-      const sole = new THREE.Mesh(soleGeo, soleMat);
-      sole.position.set(0, -0.49, 0.06);
-      legGroup.add(sole);
-
-      return legGroup;
-    }
-
-    leftLeg = makeLeg(-0.16);
-    rightLeg = makeLeg(0.16);
-    bodyGroup.add(leftLeg);
-    bodyGroup.add(rightLeg);
-
-    // ---- Arms & Hands ----
-    function makeArm(sideX) {
-      const armGroup = new THREE.Group();
-      armGroup.position.set(sideX, 0.9, 0);
-
-      const armGeo = new THREE.CylinderGeometry(0.07, 0.06, 0.45, 8);
-      const armMesh = new THREE.Mesh(armGeo, bananaYellowMat);
-      armMesh.position.y = -0.22;
-      armMesh.castShadow = true;
-      armGroup.add(armMesh);
-
-      // Hand glove
-      const handGeo = new THREE.SphereGeometry(0.09, 8, 8);
-      const handMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-      const hand = new THREE.Mesh(handGeo, handMat);
-      hand.position.y = -0.46;
-      armGroup.add(hand);
-
-      return armGroup;
-    }
-
-    leftArm = makeArm(-0.38);
-    rightArm = makeArm(0.38);
-    bodyGroup.add(leftArm);
-    bodyGroup.add(rightArm);
+    // ---- Invisible dummy limb Groups ----
+    // The update() animation loop rotates these; keeping them as empty
+    // THREE.Group objects means the math runs cleanly with zero render cost.
+    leftLeg  = new THREE.Group();
+    rightLeg = new THREE.Group();
+    leftArm  = new THREE.Group();
+    rightArm = new THREE.Group();
+    headMesh = new THREE.Group();
+    // (Not added to the scene — rotation state only)
 
     // ============================================================
     // Superpower Visual Attachments
@@ -404,6 +327,11 @@ const Player = (() => {
         slideTimer = 0;
         bodyGroup.rotation.x = 0;
         bodyGroup.scale.set(1, 1, 1);
+        // Reset ninja sprite transforms on slide exit
+        if (ninjaSpriteBase) {
+          ninjaSpriteBase.scale.set(1, 1, 1);
+          ninjaSpriteBase.rotation.x = 0;
+        }
       } else {
         // Lean forward into aerodynamic slide
         bodyGroup.rotation.x = 0.85;
@@ -421,18 +349,45 @@ const Player = (() => {
 
       // Subtle running bob
       bodyGroup.position.y = Math.abs(Math.sin(runAnimClock * 14)) * 0.08;
+
+      // -- Ninja sprite: run-bob squash & stretch --
+      if (ninjaSpriteBase) {
+        const bob = Math.abs(Math.sin(runAnimClock * 14));
+        // Slight vertical squash on foot-strike (bob peak) for cartoon weight
+        const scaleY = 1.0 + bob * 0.04;
+        const scaleX = 1.0 - bob * 0.025;
+        ninjaSpriteBase.scale.set(scaleX, scaleY, 1);
+        // Subtle forward lean during run
+        ninjaSpriteBase.rotation.x = 0.08;
+      }
     } else if (isJumping) {
       // Jump pose: legs tucked back, arms up
       if (leftLeg) leftLeg.rotation.x = 0.5;
       if (rightLeg) rightLeg.rotation.x = 0.5;
       if (leftArm) leftArm.rotation.x = -1.2;
       if (rightArm) rightArm.rotation.x = -1.2;
+
+      // -- Ninja sprite: jump stretch --
+      if (ninjaSpriteBase) {
+        // Stretch taller as velocity is positive, compress as falling
+        const stretchY = velocityY > 0 ? 1.12 : 0.92;
+        const stretchX = velocityY > 0 ? 0.90 : 1.06;
+        ninjaSpriteBase.scale.set(stretchX, stretchY, 1);
+        // Slight back-lean on ascent, forward-lean on descent
+        ninjaSpriteBase.rotation.x = velocityY > 0 ? -0.12 : 0.18;
+      }
     } else if (isJetpackActive) {
       // Flying pose: feet trailing back, arms forward
       if (leftLeg) leftLeg.rotation.x = 0.6;
       if (rightLeg) rightLeg.rotation.x = 0.6;
       if (leftArm) leftArm.rotation.x = 0.3;
       if (rightArm) rightArm.rotation.x = 0.3;
+
+      // -- Ninja sprite: fly pose (slight lean) --
+      if (ninjaSpriteBase) {
+        ninjaSpriteBase.scale.set(1.0, 1.1, 1);
+        ninjaSpriteBase.rotation.x = -0.15; // lean forward in flight
+      }
     }
 
     // ---- Superpower Attachment Animations ----
@@ -451,6 +406,27 @@ const Player = (() => {
       if (invulnerableTimer <= 0) {
         isInvulnerable = false;
         rootGroup.visible = true;
+      }
+    }
+
+    // ---- Ninja sprite: billboard camera-facing ----
+    // Rotates the sprite plane to face the camera each frame.
+    // Only X/Y facing is corrected; the bodyGroup banking (Z) is kept
+    // as visual feedback during lane switches.
+    if (ninjaSpriteBase && typeof World !== "undefined" && World.getCamera) {
+      const cam = World.getCamera();
+      if (cam) {
+        // Get sprite's world position
+        const spriteWorldPos = new THREE.Vector3();
+        ninjaSpriteBase.getWorldPosition(spriteWorldPos);
+        // Compute direction from sprite to camera (XZ plane only for clean look)
+        const toCam = new THREE.Vector3(
+          cam.position.x - spriteWorldPos.x,
+          0,
+          cam.position.z - spriteWorldPos.z
+        ).normalize();
+        // atan2 gives us the Y rotation to face the camera in XZ plane
+        ninjaSpriteBase.rotation.y = Math.atan2(toCam.x, toCam.z);
       }
     }
   }
