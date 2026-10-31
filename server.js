@@ -13,6 +13,7 @@ const authMiddleware = require("./middleware/authMiddleware");
 const authRoutes = require("./routes/authRoutes");
 const scoreRoutes = require("./routes/scoreRoutes");
 const leaderboardRoutes = require("./routes/leaderboardRoutes");
+const runnerRoutes = require("./routes/runnerRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,6 +44,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/auth", authRoutes);
 app.use("/api/scores", scoreRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/runner", runnerRoutes);
 
 // Convenient Page Navigation Routes
 app.get("/login", (req, res) => {
@@ -56,6 +58,9 @@ app.get("/dashboard", authMiddleware, (req, res) => {
 });
 app.get("/leaderboard", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "pages", "leaderboard.html"));
+});
+app.get("/runner", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "runner", "index.html"));
 });
 
 // Official Banana API, documented by the provider.
