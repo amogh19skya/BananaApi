@@ -3,7 +3,7 @@
 // Pre-fetches Banana API puzzles and triggers bullet-time modal
 // ================================================================
 const PuzzleSystem = (() => {
-  const PUZZLE_TIME = 5.0; // 5-second countdown window
+  let maxPuzzleTime = 8.0; // Dynamically set according to difficulty mode (8s, 5s, 3s)
 
   // Pre-fetched puzzle queue
   const puzzleQueue = [];
@@ -26,8 +26,16 @@ const PuzzleSystem = (() => {
   const rewardIcon = document.getElementById("reward-icon");
   const rewardTitle = document.getElementById("reward-title");
   const puzzleInstruction = document.getElementById("puzzle-instruction");
+  const puzzleModeTag = document.getElementById("puzzle-mode-tag");
 
   const CIRCUMFERENCE = 2 * Math.PI * 54;
+
+  function setModeConfig(seconds, label) {
+    maxPuzzleTime = seconds;
+    if (puzzleModeTag) {
+      puzzleModeTag.textContent = label + " (" + seconds + "s TIMER)";
+    }
+  }
 
   // ---- Pre-fetching Puzzles from Server Proxy ----
   async function prefetch() {
@@ -72,7 +80,7 @@ const PuzzleSystem = (() => {
     }
 
     isPuzzleActive = true;
-    puzzleTimer = PUZZLE_TIME;
+    puzzleTimer = maxPuzzleTime;
 
     // Reset modal UI
     if (rewardSplash) rewardSplash.classList.add("hidden");
@@ -96,11 +104,10 @@ const PuzzleSystem = (() => {
     const t = Math.max(0, Math.ceil(puzzleTimer));
     if (timerText) timerText.textContent = t;
 
-    const pct = Math.max(0, puzzleTimer / PUZZLE_TIME);
+    const pct = Math.max(0, puzzleTimer / maxPuzzleTime);
     const offset = CIRCUMFERENCE * (1 - pct);
     if (timerRingProgress) {
       timerRingProgress.style.strokeDashoffset = offset;
-      // Color change as timer runs down
       if (pct < 0.3) {
         timerRingProgress.style.stroke = "#ef4444";
       } else if (pct < 0.6) {
@@ -208,6 +215,7 @@ const PuzzleSystem = (() => {
     showPuzzle,
     update,
     reset,
+    setModeConfig,
     isActive: () => isPuzzleActive
   };
 })();

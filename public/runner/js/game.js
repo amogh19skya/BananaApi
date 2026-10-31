@@ -1,19 +1,52 @@
 // ================================================================
 // Banana Surfers – Main Game Loop
-// Direct 1-scene continuous runner flow:
-// Spawns directly into running gameplay on load with zero intro screens
+// Direct 1-scene continuous runner flow with dynamic difficulty modes:
+// Easy (8s puzzle), Hard (5s puzzle), Extra Hard (3s puzzle)
 // ================================================================
 const Game = (() => {
+  // Difficulty Modes Configuration
+  const DIFFICULTY_CONFIG = {
+    easy: {
+      key: "easy",
+      name: "Easy",
+      badge: "🌱 EASY (8s)",
+      badgeIcon: "🌱",
+      puzzleTime: 8.0, // 8 seconds to solve puzzle!
+      baseSpeed: 14.0, // Relaxed speed
+      maxSpeed: 28.0,
+      multiplier: 1.0
+    },
+    hard: {
+      key: "hard",
+      name: "Hard",
+      badge: "⚡ HARD (5s)",
+      badgeIcon: "⚡",
+      puzzleTime: 5.0, // 5 seconds to solve puzzle!
+      baseSpeed: 18.0, // Fast arcade runner speed
+      maxSpeed: 36.0,
+      multiplier: 1.5
+    },
+    extraHard: {
+      key: "extraHard",
+      name: "Extra Hard",
+      badge: "🔥 EXTRA HARD (3s)",
+      badgeIcon: "🔥",
+      puzzleTime: 3.0, // 3 seconds to solve puzzle! Rapid reflex!
+      baseSpeed: 22.0, // Blistering speed
+      maxSpeed: 42.0,
+      multiplier: 2.0
+    }
+  };
+
+  let currentDifficulty = DIFFICULTY_CONFIG.easy;
+
   // States: RUNNING, PUZZLE (Bullet-Time), GAMEOVER
   const STATE = { RUNNING: 1, PUZZLE: 2, GAMEOVER: 3 };
   let state = STATE.RUNNING;
 
-  // Running speed progression (m/s)
-  const BASE_SPEED = 16;
-  const MAX_SPEED = 36;
   const SPEED_K = 0.0022;
 
-  let speed = BASE_SPEED;
+  let speed = currentDifficulty.baseSpeed;
   let distance = 0;
   let score = 0;
   let bananaCount = 0;
@@ -29,11 +62,19 @@ const Game = (() => {
   const canvas = document.getElementById("runner-canvas");
   const gameoverScreen = document.getElementById("gameover-screen");
   const goRetryBtn = document.getElementById("go-retry-btn");
+  const goDiffBadge = document.getElementById("go-diff-badge");
 
   // HUD elements
   const hudScoreValue = document.getElementById("hud-score-value");
   const hudDistanceValue = document.getElementById("hud-distance-value");
   const hudBananaCount = document.getElementById("hud-banana-count");
+
+  // Difficulty UI
+  const diffBtn = document.getElementById("difficulty-btn");
+  const diffMenu = document.getElementById("difficulty-menu");
+  const diffBadgeIcon = document.getElementById("diff-badge-icon");
+  const diffBadgeText = document.getElementById("diff-badge-text");
+  const diffOptions = document.querySelectorAll(".diff-option");
 
   // Game over elements
   const goDistance = document.getElementById("go-distance");
@@ -45,6 +86,9 @@ const Game = (() => {
     World.init(canvas);
     bindEvents();
 
+    // Set initial difficulty
+    setDifficulty("easy");
+
     // Start directly in running scene!
     startGame();
 
@@ -52,7 +96,48 @@ const Game = (() => {
     requestAnimationFrame(gameLoop);
   }
 
+  function setDifficulty(modeKey) {
+    if (!DIFFICULTY_CONFIG[modeKey]) return;
+    currentDifficulty = DIFFICULTY_CONFIG[modeKey];
+
+    // Update HUD selector
+    if (diffBadgeIcon) diffBadgeIcon.textContent = currentDifficulty.badgeIcon;
+    if (diffBadgeText) diffBadgeText.textContent = currentDifficulty.name.toUpperCase() + ` (${currentDifficulty.puzzleTime}s)`;
+
+    // Update active state in dropdown
+    diffOptions.forEach(opt => {
+      opt.classList.toggle("active", opt.dataset.mode === modeKey);
+    });
+
+    // Notify puzzle system to align countdown ring & timer to selected mode!
+    PuzzleSystem.setModeConfig(currentDifficulty.puzzleTime, currentDifficulty.badge);
+  }
+
   function bindEvents() {
+    // Difficulty dropdown toggle
+    if (diffBtn && diffMenu) {
+      diffBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        diffMenu.classList.toggle("hidden");
+      });
+
+      diffOptions.forEach(opt => {
+        opt.addEventListener("click", (e) => {
+          e.stopPropagation();
+          setDifficulty(opt.dataset.mode);
+          diffMenu.classList.add("hidden");
+          // Restart with new difficulty speed
+          startGame();
+        });
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!diffMenu.contains(e.target) && e.target !== diffBtn) {
+          diffMenu.classList.add("hidden");
+        }
+      });
+    }
+
     if (goRetryBtn) {
       goRetryBtn.addEventListener("click", () => {
         startGame();
@@ -81,7 +166,7 @@ const Game = (() => {
     AudioEngine.unlock();
 
     state = STATE.RUNNING;
-    speed = BASE_SPEED;
+    speed = currentDifficulty.baseSpeed;
     distance = 0;
     score = 0;
     bananaCount = 0;
@@ -91,6 +176,10 @@ const Game = (() => {
     runStartTime = performance.now();
 
     if (gameoverScreen) gameoverScreen.classList.add("hidden");
+    if (diffMenu) diffMenu.classList.add("hidden");
+
+    // Align puzzle timer
+    PuzzleSystem.setModeConfig(currentDifficulty.puzzleTime, currentDifficulty.badge);
 
     const scene = World.getScene();
     Player.reset(scene);
@@ -118,6 +207,7 @@ const Game = (() => {
     if (goScore) goScore.textContent = score;
     if (goBananas) goBananas.textContent = bananaCount;
     if (goCrates) goCrates.textContent = `${cratesSolved}/${cratesEncountered}`;
+    if (goDiffBadge) goDiffBadge.textContent = currentDifficulty.badge;
     if (gameoverScreen) gameoverScreen.classList.remove("hidden");
 
     // Async save run stats (if logged in)
@@ -130,7 +220,8 @@ const Game = (() => {
         cratesEncountered,
         cratesSolved,
         score,
-        duration: runDuration
+        duration: runDuration,
+        difficulty: currentDifficulty.key
       })
     }).catch(() => {});
   }
@@ -138,7 +229,9 @@ const Game = (() => {
   function getSpeed() {
     const dCap = 2200;
     const progress = Math.log(1 + SPEED_K * distance) / Math.log(1 + SPEED_K * dCap);
-    return BASE_SPEED + (MAX_SPEED - BASE_SPEED) * Math.min(progress, 1);
+    const base = currentDifficulty.baseSpeed;
+    const max = currentDifficulty.maxSpeed;
+    return base + (max - base) * Math.min(progress, 1);
   }
 
   function updateHUD() {
@@ -165,7 +258,7 @@ const Game = (() => {
 
     // ---- STATE.PUZZLE (Bullet-Time Slowdown) ----
     if (state === STATE.PUZZLE) {
-      // Puzzle timer runs in real-time
+      // Puzzle timer runs in real-time according to difficulty countdown
       PuzzleSystem.update(rawDelta);
 
       // 3D world moves in extreme slow-motion
@@ -209,9 +302,9 @@ const Game = (() => {
     // ---- Collision: Bananas ----
     const bananasGained = Collectibles.checkBananaCollision(playerBox);
     if (bananasGained > 0) {
-      const mult = PowerupManager.getMultiplier();
+      const mult = PowerupManager.getMultiplier() * currentDifficulty.multiplier;
       bananaCount += bananasGained;
-      score += bananasGained * 5 * mult;
+      score += Math.round(bananasGained * 5 * mult);
       AudioEngine.playBananaPickup();
     }
 
@@ -234,14 +327,15 @@ const Game = (() => {
           cratesSolved++;
           // Grant the Super Power to use during the run!
           PowerupManager.activate(result.powerup);
-          score += 100 * PowerupManager.getMultiplier();
+          score += Math.round(100 * PowerupManager.getMultiplier() * currentDifficulty.multiplier);
         }
       });
     }
 
     // Distance Score
-    const distScore = Math.floor(distance / 5) * PowerupManager.getMultiplier();
-    score = Math.max(score, distScore + bananaCount * 5 * PowerupManager.getMultiplier());
+    const distMultiplier = PowerupManager.getMultiplier() * currentDifficulty.multiplier;
+    const distScore = Math.floor(distance / 5) * distMultiplier;
+    score = Math.max(score, Math.round(distScore + bananaCount * 5 * distMultiplier));
 
     updateHUD();
 
@@ -261,5 +355,5 @@ const Game = (() => {
   // Auto-boot
   init();
 
-  return { startGame };
+  return { startGame, setDifficulty };
 })();

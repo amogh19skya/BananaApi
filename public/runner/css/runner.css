@@ -55,6 +55,89 @@ html, body {
   display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
 }
 
+/* Difficulty Selector Pill in HUD */
+.hud-difficulty-container {
+  position: relative;
+  pointer-events: auto;
+  padding: 4px 6px;
+}
+
+.difficulty-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--white);
+  font-family: var(--font-main);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+.difficulty-toggle-btn:hover {
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--gold);
+}
+.diff-arrow { font-size: 10px; opacity: 0.7; }
+
+.difficulty-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: linear-gradient(165deg, var(--purple-dark), var(--purple-deep));
+  border: 1.5px solid var(--gold);
+  border-radius: 16px;
+  padding: 8px;
+  min-width: 200px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7), 0 0 20px var(--gold-glow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.diff-option {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  font-family: var(--font-main);
+}
+.diff-option:hover, .diff-option.active {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: var(--gold);
+  transform: translateX(3px);
+}
+.diff-option.active strong { color: var(--gold); }
+.diff-opt-icon { font-size: 18px; }
+.diff-opt-info strong { display: block; font-size: 13px; }
+.diff-opt-info small { display: block; font-size: 10px; color: rgba(255,255,255,0.6); }
+
+.puzzle-mode-tag {
+  display: inline-block;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin-bottom: 4px;
+}
+
 .hud-pill {
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
@@ -369,7 +452,90 @@ html, body {
 
 @media (max-width: 500px) {
   .hud { padding: 12px 14px; }
-  .hud-pill { padding: 6px 12px; gap: 6px; }
+  /* Difficulty Selector Pill in HUD */
+.hud-difficulty-container {
+  position: relative;
+  pointer-events: auto;
+  padding: 4px 6px;
+}
+
+.difficulty-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--white);
+  font-family: var(--font-main);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+.difficulty-toggle-btn:hover {
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--gold);
+}
+.diff-arrow { font-size: 10px; opacity: 0.7; }
+
+.difficulty-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: linear-gradient(165deg, var(--purple-dark), var(--purple-deep));
+  border: 1.5px solid var(--gold);
+  border-radius: 16px;
+  padding: 8px;
+  min-width: 200px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7), 0 0 20px var(--gold-glow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.diff-option {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  font-family: var(--font-main);
+}
+.diff-option:hover, .diff-option.active {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: var(--gold);
+  transform: translateX(3px);
+}
+.diff-option.active strong { color: var(--gold); }
+.diff-opt-icon { font-size: 18px; }
+.diff-opt-info strong { display: block; font-size: 13px; }
+.diff-opt-info small { display: block; font-size: 10px; color: rgba(255,255,255,0.6); }
+
+.puzzle-mode-tag {
+  display: inline-block;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin-bottom: 4px;
+}
+
+.hud-pill { padding: 6px 12px; gap: 6px; }
   .hud-value { font-size: 18px; }
   .hud-powerup { max-width: 220px; }
   .puzzle-modal-content { padding: 18px 16px; }

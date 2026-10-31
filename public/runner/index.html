@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Banana Surfers – Brain Quest Runner</title>
+  <title>Banana Surfers – 3D Endless Runner</title>
   <link rel="stylesheet" href="css/runner.css" />
 </head>
 
@@ -15,15 +15,48 @@
   <canvas id="runner-canvas"></canvas>
 
   <!-- ======================================================== -->
-  <!-- HUD Overlay (Minimalist Arcade Cyberpunk)               -->
+  <!-- HUD Overlay (Modern Arcade Glassmorphism)                -->
   <!-- ======================================================== -->
   <div id="hud" class="hud">
     <div class="hud-top">
+      <!-- Difficulty Mode Selector Pill -->
+      <div class="hud-pill hud-difficulty-container" id="difficulty-selector-pill">
+        <button id="difficulty-btn" class="difficulty-toggle-btn" type="button" title="Click to change difficulty & puzzle timer">
+          <span id="diff-badge-icon">🌱</span>
+          <span id="diff-badge-text">EASY (8s)</span>
+          <span class="diff-arrow">▾</span>
+        </button>
+        <div id="difficulty-menu" class="difficulty-dropdown hidden">
+          <button class="diff-option active" data-mode="easy" type="button">
+            <span class="diff-opt-icon">🌱</span>
+            <div class="diff-opt-info">
+              <strong>Easy</strong>
+              <small>8s Puzzle • 14 m/s</small>
+            </div>
+          </button>
+          <button class="diff-option" data-mode="hard" type="button">
+            <span class="diff-opt-icon">⚡</span>
+            <div class="diff-opt-info">
+              <strong>Hard</strong>
+              <small>5s Puzzle • 18 m/s</small>
+            </div>
+          </button>
+          <button class="diff-option" data-mode="extraHard" type="button">
+            <span class="diff-opt-icon">🔥</span>
+            <div class="diff-opt-info">
+              <strong>Extra Hard</strong>
+              <small>3s Puzzle • 22 m/s</small>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Pills -->
       <div class="hud-pill hud-score">
         <span class="hud-label">SCORE</span>
         <span id="hud-score-value" class="hud-value">0</span>
       </div>
-      <div class="hud-pill hud-distance">
+      <div class="hud-distance">
         <span class="hud-label">DISTANCE</span>
         <span id="hud-distance-value" class="hud-value">0m</span>
       </div>
@@ -47,9 +80,10 @@
       </div>
     </div>
 
-    <!-- Quick back-to-quest link in subtle corner pill -->
+    <!-- Quick Navigation Links (Corner) -->
     <div class="hud-corner-nav">
-      <a href="/" class="corner-link" title="Banana Brain Quest Arena">🎯 Quest Arena</a>
+      <a href="../pages/leaderboard.html" class="corner-link">🏆 Leaderboard</a>
+      <a href="../pages/dashboard.html" class="corner-link">👤 Dashboard</a>
     </div>
   </div>
 
@@ -64,11 +98,12 @@
             <circle class="timer-ring-bg" cx="60" cy="60" r="54" />
             <circle id="timer-ring-progress" class="timer-ring-progress" cx="60" cy="60" r="54" />
           </svg>
-          <span id="puzzle-timer-text" class="puzzle-timer-text">5</span>
+          <span id="puzzle-timer-text" class="puzzle-timer-text">8</span>
         </div>
         <div class="puzzle-title-box">
+          <div class="puzzle-mode-tag" id="puzzle-mode-tag">🌱 EASY MODE</div>
           <h2 class="puzzle-title">📦 BANANA CRATE</h2>
-          <span class="puzzle-sub">Solve for Super Power!</span>
+          <span class="puzzle-sub">Solve to unlock Super Power!</span>
         </div>
       </div>
 
@@ -110,27 +145,26 @@
       <h2 class="gameover-title">RUN STATS</h2>
       <div class="gameover-stats-grid">
         <div class="go-stat-pill">
-          <span class="go-label">DISTANCE</span>
-          <span id="go-distance" class="go-val">0m</span>
+          <span class="go-label">DIFFICULTY</span>
+          <span id="go-diff-badge" class="go-val" style="font-size: 16px;">🌱 EASY</span>
         </div>
         <div class="go-stat-pill">
           <span class="go-label">SCORE</span>
           <span id="go-score" class="go-val">0</span>
         </div>
         <div class="go-stat-pill">
-          <span class="go-label">🍌 COLLECTED</span>
-          <span id="go-bananas" class="go-val">0</span>
+          <span class="go-label">DISTANCE</span>
+          <span id="go-distance" class="go-val">0m</span>
         </div>
         <div class="go-stat-pill">
-          <span class="go-label">CRATES SOLVED</span>
-          <span id="go-crates" class="go-val">0/0</span>
+          <span class="go-label">🍌 COLLECTED</span>
+          <span id="go-bananas" class="go-val">0</span>
         </div>
       </div>
       <div class="gameover-actions">
         <button id="go-retry-btn" class="go-retry-btn" type="button">
           🔄 RUN AGAIN
         </button>
-        <a href="/" class="go-quest-link">🎯 Brain Quest Arena</a>
       </div>
     </div>
   </div>
