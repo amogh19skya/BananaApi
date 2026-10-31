@@ -123,8 +123,19 @@ const PuzzleSystem = (() => {
     if (numpad) numpad.style.display = "grid";
     if (puzzleInstruction) puzzleInstruction.style.display = "block";
     if (puzzleImage) {
+      puzzleImage.style.display = "none"; // hide until loaded
+      puzzleImage.onload = () => {
+        puzzleImage.style.display = "block";
+        if (puzzleLoading) puzzleLoading.style.display = "none";
+      };
+      puzzleImage.onerror = () => {
+        puzzleImage.style.display = "none";
+        if (puzzleLoading) {
+          puzzleLoading.style.display = "block";
+          puzzleLoading.textContent = "Puzzle image unavailable";
+        }
+      };
       puzzleImage.src = puzzle.imageUrl;
-      puzzleImage.style.display = "block";
     }
     if (puzzleLoading) puzzleLoading.style.display = "none";
     if (modal) modal.classList.remove("hidden");

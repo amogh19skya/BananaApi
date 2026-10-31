@@ -37,8 +37,15 @@ app.use(
   })
 );
 
-// Serve static frontend assets
-app.use(express.static(path.join(__dirname, "public")));
+// Serve static frontend assets with correct MIME type for .jfif images
+// Chrome requires image/jpeg; the default image/pjpeg is not rendered
+app.use(express.static(path.join(__dirname, "public"), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith(".jfif")) {
+      res.setHeader("Content-Type", "image/jpeg");
+    }
+  }
+}));
 
 // Register Modular API Routes
 app.use("/api/auth", authRoutes);
