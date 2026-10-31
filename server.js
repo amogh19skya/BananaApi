@@ -1,16 +1,80 @@
-
+require("dotenv").config();
 const express = require("express");
+const session = require("express-session");
 const path = require("path");
 
+// Database initialization
+const db = require("./config/db");
+
+// Middleware
+const authMiddleware = require("./middleware/authMiddleware");
+
+// Modular Route Handlers
+const authRoutes = require("./routes/authRoutes");
+const scoreRoutes = require("./routes/scoreRoutes");
+const leaderboardRoutes = require("./routes/leaderboardRoutes");
+const runnerRoutes = require("./routes/runnerRoutes");
+
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "10kb" }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.urlencoded({ extended: true }));
+
+// Secure Session-Based Authentication Configuration
+app.use(
+  session({
+    name: "banana_session",
+    secret: process.env.SESSION_SECRET || "banana_brain_quest_arcade_secret_session_key_2026",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  })
+);
+
+// Serve static frontend assets with correct MIME type for .jfif images
+// Chrome requires image/jpeg; the default image/pjpeg is not rendered
+app.use(express.static(path.join(__dirname, "public"), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith(".jfif")) {
+      res.setHeader("Content-Type", "image/jpeg");
+    }
+  }
+}));
+
+// Register Modular API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/scores", scoreRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/runner", runnerRoutes);
+
+// Convenient Page Navigation Routes
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pages", "login.html"));
+});
+app.get("/register", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pages", "register.html"));
+});
+app.get("/dashboard", authMiddleware, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pages", "dashboard.html"));
+});
+app.get("/leaderboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pages", "leaderboard.html"));
+});
+app.get("/runner", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+app.get("/quiz", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pages", "quiz.html"));
+});
 
 // Official Banana API, documented by the provider.
-const BANANA_API =
-  "http://marcconrad.com/uob/banana/api.php?out=json";
+const BANANA_API = "http://marcconrad.com/uob/banana/api.php?out=json";
 
 let currentQuestion = null;
 

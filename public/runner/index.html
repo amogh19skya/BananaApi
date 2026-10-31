@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Banana Surfers – 3D Endless Runner</title>
+  <link rel="stylesheet" href="css/runner.css" />
+</head>
+
+<body>
+  <!-- ======================================================== -->
+  <!-- Three.js 3D Canvas (full viewport)                       -->
+  <!-- ======================================================== -->
+  <canvas id="runner-canvas"></canvas>
+
+  <!-- ======================================================== -->
+  <!-- HUD Overlay (Modern Arcade Glassmorphism)                -->
+  <!-- ======================================================== -->
+  <div id="hud" class="hud">
+    <div class="hud-top">
+      <!-- Difficulty Mode Selector Pill -->
+      <div class="hud-pill hud-difficulty-container" id="difficulty-selector-pill">
+        <button id="difficulty-btn" class="difficulty-toggle-btn" type="button" title="Click to change difficulty & puzzle timer">
+          <span id="diff-badge-icon">🌱</span>
+          <span id="diff-badge-text">EASY (60s)</span>
+          <span class="diff-arrow">▾</span>
+        </button>
+        <div id="difficulty-menu" class="difficulty-dropdown hidden">
+          <button class="diff-option active" data-mode="easy" type="button">
+            <span class="diff-opt-icon">🌱</span>
+            <div class="diff-opt-info">
+              <strong>EASY (60s)</strong>
+              <small>60s Puzzle • 14 m/s</small>
+            </div>
+          </button>
+          <button class="diff-option" data-mode="hard" type="button">
+            <span class="diff-opt-icon">⚡</span>
+            <div class="diff-opt-info">
+              <strong>HARD (40s)</strong>
+              <small>40s Puzzle • 18 m/s</small>
+            </div>
+          </button>
+          <button class="diff-option" data-mode="extraHard" type="button">
+            <span class="diff-opt-icon">🔥</span>
+            <div class="diff-opt-info">
+              <strong>EXTRA HARD (25s)</strong>
+              <small>25s Puzzle • 22 m/s</small>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Pills -->
+      <div class="hud-pill hud-score">
+        <span class="hud-label">SCORE</span>
+        <span id="hud-score-value" class="hud-value">0</span>
+      </div>
+      <div class="hud-distance">
+        <span class="hud-label">DISTANCE</span>
+        <span id="hud-distance-value" class="hud-value">0m</span>
+      </div>
+      <div class="hud-pill hud-bananas">
+        <span class="hud-icon">🍌</span>
+        <span id="hud-banana-count" class="hud-value">0</span>
+      </div>
+      <div class="hud-pill hud-multiplier hidden" id="hud-multiplier">
+        <span id="hud-multiplier-value" class="hud-multiplier-text">2X</span>
+      </div>
+    </div>
+
+    <!-- Active Power-Up Banner & Depleting Energy Bar -->
+    <div id="hud-powerup" class="hud-powerup hidden">
+      <div class="powerup-badge">
+        <span id="powerup-icon" class="powerup-icon">⚡</span>
+        <span id="powerup-name" class="powerup-name">SUPER POWER</span>
+      </div>
+      <div class="powerup-bar-bg">
+        <div id="powerup-bar-fill" class="powerup-bar-fill"></div>
+      </div>
+    </div>
+
+    <!-- Quick Navigation Links (Corner) -->
+    <div class="hud-corner-nav">
+      <a href="../pages/leaderboard.html" class="corner-link">🏆 Leaderboard</a>
+      <a href="../pages/dashboard.html" class="corner-link">👤 Dashboard</a>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- Puzzle Modal (Bullet-Time Overlay)                       -->
+  <!-- ======================================================== -->
+  <div id="puzzle-modal" class="puzzle-modal hidden">
+    <div class="puzzle-modal-content">
+      <div class="puzzle-header">
+        <div class="puzzle-timer-ring">
+          <svg viewBox="0 0 120 120">
+            <circle class="timer-ring-bg" cx="60" cy="60" r="54" />
+            <circle id="timer-ring-progress" class="timer-ring-progress" cx="60" cy="60" r="54" />
+          </svg>
+          <span id="puzzle-timer-text" class="puzzle-timer-text">8</span>
+        </div>
+        <div class="puzzle-title-box">
+          <div class="puzzle-mode-tag" id="puzzle-mode-tag">🌱 EASY MODE</div>
+          <h2 class="puzzle-title">📦 BANANA CRATE</h2>
+          <span class="puzzle-sub">Solve to unlock Super Power!</span>
+        </div>
+      </div>
+
+      <!-- Puzzle Equation Image Frame (Hidden when reward splash appears) -->
+      <div id="puzzle-image-frame" class="puzzle-image-frame">
+        <img id="puzzle-image" alt="Banana Equation Puzzle" />
+        <div id="puzzle-loading" class="puzzle-loading">Fetching Banana API Puzzle…</div>
+      </div>
+
+      <!-- Powerup Announcement Popup (Shows on correct answer) -->
+      <div id="puzzle-reward-splash" class="puzzle-reward-splash hidden">
+        <div class="reward-success-badge">✅ CORRECT ANSWER!</div>
+
+        <!-- Power-up Showcase Visual Frame -->
+        <div class="reward-image-showcase">
+          <img id="reward-image" class="reward-powerup-img" alt="Power-up Reward" />
+          <span id="reward-icon" class="reward-fallback-icon hidden">⚡</span>
+        </div>
+
+        <h3 id="reward-title" class="reward-title">POWER-UP EARNED</h3>
+        <p id="reward-desc" class="reward-desc">Special power-up description goes here.</p>
+        <button id="activate-power-btn" class="activate-power-btn" type="button">
+          ⚡ ACTIVATE POWER
+        </button>
+      </div>
+
+      <p class="puzzle-instruction" id="puzzle-instruction">Tap the missing number (0 – 9):</p>
+      
+      <div class="puzzle-numpad" id="puzzle-numpad">
+        <button class="numpad-key" data-num="1">1</button>
+        <button class="numpad-key" data-num="2">2</button>
+        <button class="numpad-key" data-num="3">3</button>
+        <button class="numpad-key" data-num="4">4</button>
+        <button class="numpad-key" data-num="5">5</button>
+        <button class="numpad-key" data-num="6">6</button>
+        <button class="numpad-key" data-num="7">7</button>
+        <button class="numpad-key" data-num="8">8</button>
+        <button class="numpad-key" data-num="9">9</button>
+        <button class="numpad-key numpad-zero" data-num="0">0</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- In-Scene Game Over Card (Instant 1-Click Retry)           -->
+  <!-- ======================================================== -->
+  <div id="gameover-screen" class="gameover-screen hidden">
+    <div class="gameover-card">
+      <div id="gameover-banner" class="gameover-banner">💥 CRASHED!</div>
+      <h2 class="gameover-title">RUN STATS</h2>
+      <div class="gameover-stats-grid">
+        <div class="go-stat-pill">
+          <span class="go-label">DIFFICULTY</span>
+          <span id="go-diff-badge" class="go-val" style="font-size: 16px;">🌱 EASY</span>
+        </div>
+        <div class="go-stat-pill">
+          <span class="go-label">SCORE</span>
+          <span id="go-score" class="go-val">0</span>
+        </div>
+        <div class="go-stat-pill">
+          <span class="go-label">DISTANCE</span>
+          <span id="go-distance" class="go-val">0m</span>
+        </div>
+        <div class="go-stat-pill">
+          <span class="go-label">🍌 COLLECTED</span>
+          <span id="go-bananas" class="go-val">0</span>
+        </div>
+      </div>
+      <div class="gameover-actions">
+        <button id="go-retry-btn" class="go-retry-btn" type="button">
+          🔄 RUN AGAIN
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Touch Controls Gesture Zone -->
+  <div id="touch-zone" class="touch-zone"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/obstacles.js"></script>
+  <script src="js/collectibles.js"></script>
+  <script src="js/powerups.js"></script>
+  <script src="js/puzzle.js"></script>
+  <script src="js/game.js"></script>
+</body>
+
+</html>

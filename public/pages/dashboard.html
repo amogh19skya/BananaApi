@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Player Dashboard - Banana Brain Quest</title>
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <script src="../js/dashboard.js" defer></script>
+</head>
+
+<body>
+  <main class="dashboard-container">
+    <div class="dashboard-header">
+      <div class="player-info-row">
+        <span class="player-avatar">🧠</span>
+        <div>
+          <h1 id="player-username" class="player-name">Player Dashboard</h1>
+          <span class="player-badge">Ranked Challenger</span>
+        </div>
+      </div>
+      <div class="dashboard-nav-links">
+        <a class="dash-btn" href="/runner" style="background: linear-gradient(135deg, #ffd700, #f59e0b); color: #0d0b1a; font-weight: 800;">🏃 3D Runner</a>
+        <a class="dash-btn" href="../index.html">🎮 Play Quest</a>
+        <a class="dash-btn" href="leaderboard.html">🏆 Leaderboard</a>
+      </div>
+    </div>
+
+    <!-- 5 Key Player Statistics Summary -->
+    <section class="stats-summary-grid">
+      <div class="dstat-card">
+        <span class="dstat-label">TOTAL GAMES</span>
+        <span id="dash-total-games" class="dstat-value">0</span>
+      </div>
+      <div class="dstat-card">
+        <span class="dstat-label">HIGHEST SCORE</span>
+        <span id="dash-best-score" class="dstat-value">0</span>
+      </div>
+      <div class="dstat-card">
+        <span class="dstat-label">AVG ACCURACY</span>
+        <span id="dash-accuracy" class="dstat-value">0%</span>
+      </div>
+      <div class="dstat-card">
+        <span class="dstat-label">TOTAL BANANAS</span>
+        <span id="dash-total-bananas" class="dstat-value">0</span>
+      </div>
+      <div class="dstat-card">
+        <span class="dstat-label">TOTAL DISTANCE</span>
+        <span id="dash-total-distance" class="dstat-value">0m</span>
+      </div>
+    </section>
+
+    <!-- Comprehensive Game History Section -->
+    <section class="recent-games-section">
+      <div class="section-title-row">
+        <h3>Game History & Performance</h3>
+        <span id="history-count-badge" class="history-count-badge">0 Games</span>
+      </div>
+      <div id="history-container" class="history-list">
+        <div class="history-loading">
+          <span>Loading your game history...</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer-row" style="margin-top: 30px;">
+      <a class="auth-link" href="../index.html">← Back to Quest Arena</a>
+      <button id="logout-btn" class="replay-intro-btn" type="button">Logout</button>
+    </div>
+  </main>
+</body>
+
+</html>

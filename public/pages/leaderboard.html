@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard - Banana Brain Quest</title>
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../css/leaderboard.css" />
+  <script src="../js/leaderboard.js" defer></script>
+</head>
+
+<body>
+  <main class="leaderboard-container">
+    <div class="leaderboard-header">
+      <span class="eyebrow">GLOBAL RANKINGS</span>
+      <h1 class="leaderboard-title">🏆 HALL OF FAME</h1>
+      <p class="subtitle">Top banana mathematicians sorted by score & accuracy.</p>
+    </div>
+
+    <div class="leaderboard-tabs" role="tablist">
+      <button class="tab-btn active" data-difficulty="all" type="button">All Modes</button>
+      <button class="tab-btn" data-difficulty="easy" type="button">Easy</button>
+      <button class="tab-btn" data-difficulty="hard" type="button">Hard</button>
+      <button class="tab-btn" data-difficulty="extraHard" type="button">Extra Hard</button>
+    </div>
+
+    <table class="leaderboard-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Player</th>
+          <th>Mode</th>
+          <th>Score</th>
+          <th>Accuracy</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body">
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-muted);">
+            Rankings loading or waiting for first recorded game...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="leaderboard-actions">
+      <a class="dash-btn" href="../index.html">🎮 Play Now</a>
+      <a class="dash-btn" href="dashboard.html">👤 My Dashboard</a>
+    </div>
+  </main>
+</body>
+
+</html>
+
