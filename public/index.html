@@ -107,7 +107,8 @@
         </div>
       </div>
 
-      <div class="puzzle-image-frame">
+      <!-- Puzzle Equation Image Frame (Hidden when reward splash appears) -->
+      <div id="puzzle-image-frame" class="puzzle-image-frame">
         <img id="puzzle-image" alt="Banana Equation Puzzle" />
         <div id="puzzle-loading" class="puzzle-loading">Fetching Banana API Puzzle…</div>
       </div>
@@ -115,9 +116,15 @@
       <!-- Powerup Announcement Popup (Shows on correct answer) -->
       <div id="puzzle-reward-splash" class="puzzle-reward-splash hidden">
         <div class="reward-success-badge">✅ CORRECT ANSWER!</div>
-        <span id="reward-icon" class="reward-icon">🚀</span>
-        <h3 id="reward-title" class="reward-title">BANANA JETPACK</h3>
-        <p id="reward-desc" class="reward-desc">Fly above all hazards and collect sky bananas!</p>
+
+        <!-- Power-up Showcase Visual Frame -->
+        <div class="reward-image-showcase">
+          <img id="reward-image" class="reward-powerup-img" alt="Power-up Reward" />
+          <span id="reward-icon" class="reward-fallback-icon hidden">⚡</span>
+        </div>
+
+        <h3 id="reward-title" class="reward-title">POWER-UP EARNED</h3>
+        <p id="reward-desc" class="reward-desc">Special power-up description goes here.</p>
         <button id="activate-power-btn" class="activate-power-btn" type="button">
           ⚡ ACTIVATE POWER
         </button>

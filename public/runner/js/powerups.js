@@ -5,39 +5,36 @@
 const PowerupManager = (() => {
   const POWERUPS = [
     {
-      id: "MAGNET",
-      name: "BANANA MAGNET",
-      duration: 14,
-      icon: "🧲",
-      desc: "Pulls all bananas from all 3 lanes automatically!"
-    },
-    {
-      id: "JETPACK",
-      name: "BANANA JETPACK",
-      duration: 12,
-      icon: "🚀",
-      desc: "Soar above all hazards and collect sky bananas!"
-    },
-    {
-      id: "SNEAKERS",
-      name: "SUPER SNEAKERS",
-      duration: 16,
-      icon: "👟",
-      desc: "Super jump height to clear any obstacle!"
-    },
-    {
       id: "HOVERBOARD",
       name: "GOLDEN HOVERBOARD",
       duration: 25,
       icon: "🛹",
-      desc: "Crash shield protection! Absorb 1 collision!"
+      image: "/images/golden-hoverboard.jfif",
+      desc: "Crash shield protection! Absorb 1 collision safely!"
     },
     {
-      id: "MULTIPLIER",
-      name: "2x MULTIPLIER",
-      duration: 20,
-      icon: "✨",
-      desc: "Doubles all points and banana values!"
+      id: "MAGNET",
+      name: "BANANA MAGNET",
+      duration: 16,
+      icon: "🧲",
+      image: "/images/magnet.jfif",
+      desc: "Pulls all bananas from all 3 lanes automatically!"
+    },
+    {
+      id: "SHIELD",
+      name: "ENERGY SHIELD",
+      duration: 22,
+      icon: "🛡️",
+      image: "/images/shield.jfif",
+      desc: "Protective force field absorbs obstacle collisions!"
+    },
+    {
+      id: "SPEED_BOOST",
+      name: "SPEED BOOST",
+      duration: 15,
+      icon: "⚡",
+      image: "/images/power.jfif",
+      desc: "Blazing hyper-speed burst with 2x score multiplier!"
     }
   ];
 
@@ -80,9 +77,12 @@ const PowerupManager = (() => {
     // Apply mechanics & 3D Avatar visuals
     Player.applyPowerupVisuals(powerupDef.id, true);
 
-    if (powerupDef.id === "MULTIPLIER") {
+    if (powerupDef.id === "MULTIPLIER" || powerupDef.id === "SPEED_BOOST") {
       scoreMultiplier = 2;
-      if (hudMultiplier) hudMultiplier.classList.remove("hidden");
+      if (hudMultiplier) {
+        hudMultiplier.querySelector("#hud-multiplier-value").textContent = "2X";
+        hudMultiplier.classList.remove("hidden");
+      }
     }
 
     AudioEngine.playPowerup();
@@ -108,7 +108,7 @@ const PowerupManager = (() => {
     // Remove avatar visual attachment
     Player.applyPowerupVisuals(activePowerup.id, false);
 
-    if (activePowerup.id === "MULTIPLIER") {
+    if (activePowerup.id === "MULTIPLIER" || activePowerup.id === "SPEED_BOOST") {
       scoreMultiplier = 1;
       if (hudMultiplier) hudMultiplier.classList.add("hidden");
     }

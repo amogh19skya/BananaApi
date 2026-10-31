@@ -507,7 +507,7 @@ const Player = (() => {
     if (powerupId === "JETPACK") {
       isJetpackActive = active;
       if (jetpackAttachment) jetpackAttachment.visible = active;
-    } else if (powerupId === "HOVERBOARD") {
+    } else if (powerupId === "HOVERBOARD" || powerupId === "SHIELD") {
       isHoverboardActive = active;
       if (hoverboardAttachment) hoverboardAttachment.visible = active;
     } else if (powerupId === "MAGNET") {
@@ -515,7 +515,7 @@ const Player = (() => {
       if (magnetAuraRing) magnetAuraRing.visible = active;
     } else if (powerupId === "SNEAKERS") {
       isSneakersActive = active;
-    } else if (powerupId === "MULTIPLIER") {
+    } else if (powerupId === "MULTIPLIER" || powerupId === "SPEED_BOOST") {
       isMultiplierActive = active;
       if (multiplierCrown) multiplierCrown.visible = active;
     }

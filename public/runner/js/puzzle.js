@@ -17,12 +17,14 @@ const PuzzleSystem = (() => {
 
   // DOM elements
   const modal = document.getElementById("puzzle-modal");
+  const puzzleImageFrame = document.getElementById("puzzle-image-frame");
   const puzzleImage = document.getElementById("puzzle-image");
   const puzzleLoading = document.getElementById("puzzle-loading");
   const timerText = document.getElementById("puzzle-timer-text");
   const timerRingProgress = document.getElementById("timer-ring-progress");
   const numpad = document.getElementById("puzzle-numpad");
   const rewardSplash = document.getElementById("puzzle-reward-splash");
+  const rewardImage = document.getElementById("reward-image");
   const rewardIcon = document.getElementById("reward-icon");
   const rewardTitle = document.getElementById("reward-title");
   const rewardDesc = document.getElementById("reward-desc");
@@ -74,6 +76,8 @@ const PuzzleSystem = (() => {
 
     // Immediately open modal so user sees the crate opening
     if (modal) modal.classList.remove("hidden");
+    if (puzzleImageFrame) puzzleImageFrame.style.display = "flex";
+    if (rewardImage) rewardImage.src = "";
     if (rewardSplash) rewardSplash.classList.add("hidden");
     if (numpad) numpad.style.display = "none";
     if (puzzleInstruction) puzzleInstruction.style.display = "none";
@@ -113,6 +117,8 @@ const PuzzleSystem = (() => {
     puzzleTimer = maxPuzzleTime;
 
     // Reset modal UI
+    if (puzzleImageFrame) puzzleImageFrame.style.display = "flex";
+    if (rewardImage) rewardImage.src = "";
     if (rewardSplash) rewardSplash.classList.add("hidden");
     if (numpad) numpad.style.display = "grid";
     if (puzzleInstruction) puzzleInstruction.style.display = "block";
@@ -173,12 +179,33 @@ const PuzzleSystem = (() => {
         if (numpad) numpad.style.display = "none";
         if (puzzleInstruction) puzzleInstruction.style.display = "none";
         if (puzzleImage) puzzleImage.style.display = "none";
+        if (puzzleImageFrame) puzzleImageFrame.style.display = "none";
 
         // 2. Display powerup announcement screen
         if (rewardSplash) {
           if (rewardIcon) rewardIcon.textContent = pendingPowerup.icon;
           if (rewardTitle) rewardTitle.textContent = pendingPowerup.name;
           if (rewardDesc) rewardDesc.textContent = pendingPowerup.desc;
+
+          if (rewardImage) {
+            // Setup robust fallback if image fails to load
+            rewardImage.onerror = () => {
+              rewardImage.style.display = "none";
+              if (rewardIcon) rewardIcon.classList.remove("hidden");
+            };
+            rewardImage.onload = () => {
+              rewardImage.style.display = "block";
+              if (rewardIcon) rewardIcon.classList.add("hidden");
+            };
+
+            // Dynamically assign power-up image path
+            if (pendingPowerup.image) {
+              rewardImage.src = pendingPowerup.image;
+            } else {
+              rewardImage.style.display = "none";
+              if (rewardIcon) rewardIcon.classList.remove("hidden");
+            }
+          }
           rewardSplash.classList.remove("hidden");
         }
       } else {
@@ -210,6 +237,8 @@ const PuzzleSystem = (() => {
 
   function hideModal() {
     if (modal) modal.classList.add("hidden");
+    if (puzzleImageFrame) puzzleImageFrame.style.display = "flex";
+    if (rewardImage) rewardImage.src = "";
     if (rewardSplash) rewardSplash.classList.add("hidden");
     currentPuzzle = null;
     isPuzzleActive = false;

@@ -55,6 +55,7 @@ const World = (() => {
     dirLight.shadow.camera.top = 15;
     dirLight.shadow.camera.bottom = -15;
     scene.add(dirLight);
+    scene.add(dirLight.target);
 
     // Hemisphere light for ambient color from sky/ground
     const hemiLight = new THREE.HemisphereLight(0x7733cc, 0x225511, 0.35);
@@ -62,7 +63,9 @@ const World = (() => {
 
     // Shared materials with vibrant cyberpunk highway aesthetics
     trackMaterial = new THREE.MeshStandardMaterial({
-      color: 0x231447, // Visible deep royal violet asphalt
+      color: 0x2e1b5c,
+      emissive: 0x170b32,
+      emissiveIntensity: 0.45,
       roughness: 0.6,
       metalness: 0.25
     });
@@ -137,7 +140,7 @@ const World = (() => {
     // High-visibility Highway Dashed Lane Dividers (between Left/Center and Center/Right)
     const dashLength = 3.2;
     const dashGap = 2.4;
-    const dashGeo = new THREE.BoxGeometry(0.14, 0.03, dashLength);
+    const dashGeo = new THREE.BoxGeometry(0.18, 0.04, dashLength);
     const dashMat = new THREE.MeshStandardMaterial({
       color: 0xffd700,
       emissive: 0xffaa00,
@@ -151,11 +154,11 @@ const World = (() => {
       const zPos = zStart - zOffset;
 
       const d1 = new THREE.Mesh(dashGeo, dashMat);
-      d1.position.set(dividerX1, 0.015, zPos);
+      d1.position.set(dividerX1, 0.02, zPos);
       group.add(d1);
 
       const d2 = new THREE.Mesh(dashGeo, dashMat);
-      d2.position.set(dividerX2, 0.015, zPos);
+      d2.position.set(dividerX2, 0.02, zPos);
       group.add(d2);
     }
 
