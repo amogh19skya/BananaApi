@@ -53,6 +53,8 @@ const Game = (() => {
   let cratesEncountered = 0;
   let cratesSolved = 0;
   let runStartTime = 0;
+  let runStartTimeISO = new Date().toISOString();
+  let runSaved = false;
 
   // Frame timing
   let lastTime = 0;
@@ -125,11 +127,27 @@ const Game = (() => {
       diffOptions.forEach(opt => {
         opt.addEventListener("click", (e) => {
           e.stopPropagation();
+          if ((state === STATE.RUNNING || state === STATE.PUZZLE) && distance > 5) {
+            saveRun("Abandoned", "Switched difficulty mid-run");
+          }
           setDifficulty(opt.dataset.mode);
           diffMenu.classList.add("hidden");
-          // Restart with new difficulty speed
           startGame();
         });
+      });
+
+      document.querySelectorAll(".hud-corner-nav a, .corner-link").forEach(link => {
+        link.addEventListener("click", () => {
+          if ((state === STATE.RUNNING || state === STATE.PUZZLE) && distance > 5) {
+            saveRun("Abandoned", "Navigation exit");
+          }
+        });
+      });
+
+      window.addEventListener("beforeunload", () => {
+        if ((state === STATE.RUNNING || state === STATE.PUZZLE) && distance > 5) {
+          saveRun("Abandoned", "Browser unload");
+        }
       });
 
       document.addEventListener("click", (e) => {
@@ -175,6 +193,8 @@ const Game = (() => {
     cratesSolved = 0;
     timeDilation = 1.0;
     runStartTime = performance.now();
+    runStartTimeISO = new Date().toISOString();
+    runSaved = false;
 
     if (gameoverScreen) gameoverScreen.classList.add("hidden");
     if (diffMenu) diffMenu.classList.add("hidden");
@@ -198,11 +218,50 @@ const Game = (() => {
     lastTime = performance.now();
   }
 
+  function saveRun(status = "Game Over", reason = "") {
+    if (runSaved) return; // Prevent duplicate records per run
+    runSaved = true;
+
+    const runDuration = Math.max(1, Math.floor((performance.now() - runStartTime) / 1000));
+    const attempted = cratesEncountered;
+    const correct = cratesSolved;
+    const wrong = Math.max(0, attempted - correct);
+    const accuracy = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
+
+    const payload = {
+      distance: Math.floor(distance),
+      bananas: bananaCount,
+      cratesEncountered: attempted,
+      cratesSolved: correct,
+      questionsAttempted: attempted,
+      correctAnswers: correct,
+      wrongAnswers: wrong,
+      accuracy,
+      score,
+      duration: runDuration,
+      difficulty: currentDifficulty.key,
+      gameStatus: status,
+      startTime: runStartTimeISO,
+      endTime: new Date().toISOString()
+    };
+
+    try {
+      fetch("/api/runner/end-run", {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
   function gameOver(reason = "💥 CRASHED!") {
     state = STATE.GAMEOVER;
     AudioEngine.playCrash();
 
-    const runDuration = Math.max(1, Math.floor((performance.now() - runStartTime) / 1000));
+    // Check if player solved 10 questions/crates
+    const finalStatus = cratesSolved >= 10 ? "Completed" : "Game Over";
+    saveRun(finalStatus, reason);
 
     // Update in-scene Game Over Card
     if (goBanner) goBanner.textContent = reason;
@@ -212,21 +271,6 @@ const Game = (() => {
     if (goCrates) goCrates.textContent = `${cratesSolved}/${cratesEncountered}`;
     if (goDiffBadge) goDiffBadge.textContent = currentDifficulty.badge;
     if (gameoverScreen) gameoverScreen.classList.remove("hidden");
-
-    // Async save run stats (if logged in)
-    fetch("/api/runner/end-run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        distance: Math.floor(distance),
-        bananas: bananaCount,
-        cratesEncountered,
-        cratesSolved,
-        score,
-        duration: runDuration,
-        difficulty: currentDifficulty.key
-      })
-    }).catch(() => {});
   }
 
   function getSpeed() {
@@ -335,9 +379,12 @@ const Game = (() => {
 
         if (result.powerup) {
           cratesSolved++;
-          // Activate the power-up after player explicitly clicks "ACTIVATE POWER"
           PowerupManager.activate(result.powerup);
           score += Math.round(100 * PowerupManager.getMultiplier() * currentDifficulty.multiplier);
+          if (cratesSolved >= 10) {
+            gameOver("🏆 ALL 10 PUZZLES COMPLETED!");
+            return;
+          }
         }
       });
     }

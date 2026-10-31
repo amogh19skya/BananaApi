@@ -120,29 +120,99 @@ async function endRun(req, res) {
     return res.json({ saved: false, message: "Not logged in. Run not saved." });
   }
 
-  const { distance, bananas, cratesEncountered, cratesSolved, score, duration } = req.body;
+  const userId = req.session.user.id || req.session.user.userId;
+  const username = req.session.user.username || "Player";
+
+  const distance = Math.max(0, parseInt(req.body.distance, 10) || 0);
+  const bananas = Math.max(0, parseInt(req.body.bananas, 10) || 0);
+  const cratesEncountered = Math.max(0, parseInt(req.body.cratesEncountered ?? req.body.questionsAttempted, 10) || 0);
+  const cratesSolved = Math.max(0, parseInt(req.body.cratesSolved ?? req.body.correctAnswers, 10) || 0);
+  const wrongAnswers = Math.max(0, cratesEncountered - cratesSolved);
+  const accuracy = cratesEncountered > 0 ? Math.round((cratesSolved / cratesEncountered) * 100) : 0;
+  const score = Math.max(0, parseInt(req.body.score, 10) || 0);
+  const duration = Math.max(1, parseInt(req.body.duration, 10) || 1);
+
+  const validDifficulties = ["easy", "hard", "extraHard"];
+  const difficulty = validDifficulties.includes(req.body.difficulty) ? req.body.difficulty : "easy";
+
+  // Completion status: 'Completed', 'Game Over', 'Abandoned'
+  let gameStatus = "Game Over";
+  if (req.body.gameStatus === "Completed" || cratesSolved >= 10) {
+    gameStatus = "Completed";
+  } else if (req.body.gameStatus === "Abandoned") {
+    gameStatus = "Abandoned";
+  }
+
+  const endTime = req.body.endTime ? new Date(req.body.endTime) : new Date();
+  const startTime = req.body.startTime ? new Date(req.body.startTime) : new Date(endTime.getTime() - duration * 1000);
 
   try {
     const db = require("../config/db");
 
-    await db.execute(
-      `INSERT INTO runner_runs (user_id, distance_meters, bananas_collected, crates_encountered, crates_solved, final_score, run_duration_seconds)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    // 1. Insert complete game record into game_history
+    const [historyResult] = await db.execute(
+      `INSERT INTO game_history (
+        user_id, username, difficulty, final_score, distance_meters, bananas_collected,
+        questions_attempted, correct_answers, wrong_answers, accuracy_percentage,
+        questions_answered, game_status, start_time, end_time, played_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        req.session.user.userId,
-        distance || 0,
-        bananas || 0,
-        cratesEncountered || 0,
-        cratesSolved || 0,
-        score || 0,
-        duration || 0
+        userId,
+        username,
+        difficulty,
+        score,
+        distance,
+        bananas,
+        cratesEncountered,
+        cratesSolved,
+        wrongAnswers,
+        accuracy,
+        cratesSolved,
+        gameStatus,
+        startTime,
+        endTime,
+        endTime
       ]
     );
 
-    res.json({ saved: true, message: "Run saved!" });
+    // 2. Insert into scores table to support leaderboard rankings
+    await db.execute(
+      `INSERT INTO scores (user_id, difficulty, score, correct_answers, total_questions, played_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        difficulty,
+        score,
+        cratesSolved,
+        Math.max(1, cratesEncountered),
+        endTime
+      ]
+    );
+
+    // 3. Insert into runner_runs for backwards compatibility
+    await db.execute(
+      `INSERT INTO runner_runs (user_id, distance_meters, bananas_collected, crates_encountered, crates_solved, final_score, run_duration_seconds, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        distance,
+        bananas,
+        cratesEncountered,
+        cratesSolved,
+        score,
+        duration,
+        endTime
+      ]
+    );
+
+    return res.json({
+      saved: true,
+      message: "Run saved successfully!",
+      gameId: historyResult.insertId
+    });
   } catch (error) {
     console.error("End run save error:", error.message);
-    res.json({ saved: false, message: "Could not save run." });
+    return res.status(500).json({ saved: false, message: "Could not save run." });
   }
 }
 

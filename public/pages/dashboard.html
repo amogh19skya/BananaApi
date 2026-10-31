@@ -27,26 +27,39 @@
       </div>
     </div>
 
+    <!-- 5 Key Player Statistics Summary -->
     <section class="stats-summary-grid">
       <div class="dstat-card">
         <span class="dstat-label">TOTAL GAMES</span>
         <span id="dash-total-games" class="dstat-value">0</span>
       </div>
       <div class="dstat-card">
-        <span class="dstat-label">BEST SCORE</span>
+        <span class="dstat-label">HIGHEST SCORE</span>
         <span id="dash-best-score" class="dstat-value">0</span>
       </div>
       <div class="dstat-card">
-        <span class="dstat-label">ACCURACY</span>
+        <span class="dstat-label">AVG ACCURACY</span>
         <span id="dash-accuracy" class="dstat-value">0%</span>
+      </div>
+      <div class="dstat-card">
+        <span class="dstat-label">TOTAL BANANAS</span>
+        <span id="dash-total-bananas" class="dstat-value">0</span>
+      </div>
+      <div class="dstat-card">
+        <span class="dstat-label">TOTAL DISTANCE</span>
+        <span id="dash-total-distance" class="dstat-value">0m</span>
       </div>
     </section>
 
+    <!-- Comprehensive Game History Section -->
     <section class="recent-games-section">
-      <h3>Recent Games</h3>
+      <div class="section-title-row">
+        <h3>Game History & Performance</h3>
+        <span id="history-count-badge" class="history-count-badge">0 Games</span>
+      </div>
       <div id="history-container" class="history-list">
-        <div class="history-item">
-          <span>No game records yet. Complete a 10-question round to see your stats!</span>
+        <div class="history-loading">
+          <span>Loading your game history...</span>
         </div>
       </div>
     </section>
@@ -59,4 +72,3 @@
 </body>
 
 </html>
-
