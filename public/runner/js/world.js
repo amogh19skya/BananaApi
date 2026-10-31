@@ -60,18 +60,23 @@ const World = (() => {
     const hemiLight = new THREE.HemisphereLight(0x7733cc, 0x225511, 0.35);
     scene.add(hemiLight);
 
-    // Shared materials
+    // Shared materials with vibrant cyberpunk highway aesthetics
     trackMaterial = new THREE.MeshStandardMaterial({
-      color: 0x2d1f5e,
-      roughness: 0.8, metalness: 0.1
+      color: 0x231447, // Visible deep royal violet asphalt
+      roughness: 0.6,
+      metalness: 0.25
     });
     trackSideMaterial = new THREE.MeshStandardMaterial({
-      color: 0x1a1333,
-      roughness: 0.9, metalness: 0.0
+      color: 0x4a1d96, // Bright neon purple curbs
+      roughness: 0.4,
+      metalness: 0.3
     });
     railMaterial = new THREE.MeshStandardMaterial({
-      color: 0xb8860b,
-      roughness: 0.4, metalness: 0.6
+      color: 0xffd700,
+      emissive: 0xffaa00,
+      emissiveIntensity: 0.6,
+      roughness: 0.3,
+      metalness: 0.5
     });
 
     // Generate initial chunks
@@ -97,17 +102,17 @@ const World = (() => {
     group.userData.zStart = zStart;
     group.userData.zEnd = zStart - CHUNK_LENGTH;
 
-    // Main track surface (3 lanes wide)
-    const trackWidth = LANE_WIDTH * 3 + 1.5;
+    // Main road surface (3 distinct running lanes)
+    const trackWidth = LANE_WIDTH * 3 + 1.2;
     const trackGeo = new THREE.BoxGeometry(trackWidth, 0.3, CHUNK_LENGTH);
     const track = new THREE.Mesh(trackGeo, trackMaterial);
     track.position.set(0, -0.15, zStart - CHUNK_LENGTH / 2);
     track.receiveShadow = true;
     group.add(track);
 
-    // Side walls / rails
-    const wallHeight = 0.6;
-    const wallGeo = new THREE.BoxGeometry(0.2, wallHeight, CHUNK_LENGTH);
+    // Glowing Neon Rails / Curbs on Left and Right borders
+    const wallHeight = 0.55;
+    const wallGeo = new THREE.BoxGeometry(0.25, wallHeight, CHUNK_LENGTH);
 
     const leftWall = new THREE.Mesh(wallGeo, trackSideMaterial);
     leftWall.position.set(-trackWidth / 2 - 0.1, wallHeight / 2 - 0.15, zStart - CHUNK_LENGTH / 2);
@@ -119,18 +124,39 @@ const World = (() => {
     rightWall.receiveShadow = true;
     group.add(rightWall);
 
-    // Lane divider lines (subtle golden stripes)
-    const lineGeo = new THREE.BoxGeometry(0.05, 0.02, CHUNK_LENGTH);
-    const lineMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffd700, emissiveIntensity: 0.3 });
-    for (let lane = -1; lane <= 1; lane += 2) {
-      const dividerX = lane * LANE_WIDTH / 2;
-      // Left and right of center lane
-      const line1 = new THREE.Mesh(lineGeo, lineMat);
-      line1.position.set(dividerX - LANE_WIDTH / 2, 0.01, zStart - CHUNK_LENGTH / 2);
-      group.add(line1);
-      const line2 = new THREE.Mesh(lineGeo, lineMat);
-      line2.position.set(dividerX + LANE_WIDTH / 2, 0.01, zStart - CHUNK_LENGTH / 2);
-      group.add(line2);
+    // Neon edge light piping along curbs
+    const pipeGeo = new THREE.BoxGeometry(0.08, 0.08, CHUNK_LENGTH);
+    const leftPipe = new THREE.Mesh(pipeGeo, railMaterial);
+    leftPipe.position.set(-trackWidth / 2 - 0.1, wallHeight - 0.12, zStart - CHUNK_LENGTH / 2);
+    group.add(leftPipe);
+
+    const rightPipe = new THREE.Mesh(pipeGeo, railMaterial);
+    rightPipe.position.set(trackWidth / 2 + 0.1, wallHeight - 0.12, zStart - CHUNK_LENGTH / 2);
+    group.add(rightPipe);
+
+    // High-visibility Highway Dashed Lane Dividers (between Left/Center and Center/Right)
+    const dashLength = 3.2;
+    const dashGap = 2.4;
+    const dashGeo = new THREE.BoxGeometry(0.14, 0.03, dashLength);
+    const dashMat = new THREE.MeshStandardMaterial({
+      color: 0xffd700,
+      emissive: 0xffaa00,
+      emissiveIntensity: 0.8
+    });
+
+    const dividerX1 = -LANE_WIDTH / 2; // -1.25 (boundary between Left and Center lanes)
+    const dividerX2 =  LANE_WIDTH / 2; // +1.25 (boundary between Center and Right lanes)
+
+    for (let zOffset = 2; zOffset < CHUNK_LENGTH - 2; zOffset += (dashLength + dashGap)) {
+      const zPos = zStart - zOffset;
+
+      const d1 = new THREE.Mesh(dashGeo, dashMat);
+      d1.position.set(dividerX1, 0.015, zPos);
+      group.add(d1);
+
+      const d2 = new THREE.Mesh(dashGeo, dashMat);
+      d2.position.set(dividerX2, 0.015, zPos);
+      group.add(d2);
     }
 
     // Ambient environment – pillars at chunk edges
@@ -197,6 +223,20 @@ const World = (() => {
     }
   }
 
+  function reset() {
+    chunkPool.forEach((chunk) => {
+      scene.remove(chunk);
+      chunk.traverse((child) => {
+        if (child.isMesh) child.geometry.dispose();
+      });
+    });
+    chunkPool.length = 0;
+    nextChunkZ = CHUNK_LENGTH;
+    for (let i = 0; i < VISIBLE_CHUNKS; i++) {
+      spawnChunk();
+    }
+  }
+
   return {
     init,
     update,
@@ -205,7 +245,8 @@ const World = (() => {
     getCamera: () => camera,
     LANE_WIDTH,
     CHUNK_LENGTH,
-    VISIBLE_CHUNKS
+    VISIBLE_CHUNKS,
+    reset
   };
 })();
 

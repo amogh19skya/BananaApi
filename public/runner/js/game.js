@@ -181,6 +181,7 @@ const Game = (() => {
     // Align puzzle timer
     PuzzleSystem.setModeConfig(currentDifficulty.puzzleTime, currentDifficulty.badge);
 
+    World.reset();
     const scene = World.getScene();
     Player.reset(scene);
     Obstacles.reset();
