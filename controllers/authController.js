@@ -8,7 +8,7 @@ const isValidEmail = (email) => {
 };
 
 // ==========================================
-// User Registration Controller
+// 1. User Registration Controller
 // ==========================================
 exports.register = async (req, res) => {
   try {
@@ -113,33 +113,144 @@ exports.register = async (req, res) => {
   }
 };
 
-// Controller: User Login (Placeholder for Login task)
+// ==========================================
+// 2. User Login Controller
+// ==========================================
 exports.login = async (req, res) => {
   try {
-    const { username, password } = req.body || {};
+    const { username, email, identifier, password } = req.body || {};
+    const loginIdentifier = (username || email || identifier || "").trim();
 
-    if (!username || !password) {
-      return res.status(400).json({ success: false, error: "Username and password are required." });
+    // 1. Validate required inputs
+    if (!loginIdentifier || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Username or email, and password are required."
+      });
     }
 
-    return res.status(501).json({
-      message: "Login endpoint ready. Full authentication implementation pending.",
-      received: { username }
+    // 2. Find user in the database by username OR email
+    const [users] = await db.query(
+      "SELECT user_id, username, email, password_hash, created_at FROM users WHERE username = ? OR email = ?",
+      [loginIdentifier, loginIdentifier.toLowerCase()]
+    );
+
+    if (!users || users.length === 0) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid username/email or password."
+      });
+    }
+
+    const user = users[0];
+
+    // 3. Verify submitted password against password_hash using bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid username/email or password."
+      });
+    }
+
+    // 4. Create and store user session
+    req.session.user = {
+      id: user.user_id,
+      userId: user.user_id,
+      username: user.username,
+      email: user.email
+    };
+
+    // 5. Return success response (never expose password_hash)
+    return res.json({
+      success: true,
+      message: `Welcome back, ${user.username}! Login successful.`,
+      user: {
+        userId: user.user_id,
+        username: user.username,
+        email: user.email
+      }
     });
   } catch (error) {
     console.error("Auth login error:", error);
-    return res.status(500).json({ success: false, error: "Server error during login." });
+    return res.status(500).json({
+      success: false,
+      error: "An unexpected server error occurred during login. Please try again."
+    });
   }
 };
 
-// Controller: User Logout
+// ==========================================
+// 3. User Logout Controller
+// ==========================================
 exports.logout = (req, res) => {
-  return res.json({ success: true, message: "Logged out successfully." });
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Session destroy error on logout:", err);
+        return res.status(500).json({
+          success: false,
+          error: "Could not log out. Please try again."
+        });
+      }
+      res.clearCookie("banana_session");
+      return res.json({
+        success: true,
+        message: "Logged out successfully."
+      });
+    });
+  } else {
+    return res.json({
+      success: true,
+      message: "No active session."
+    });
+  }
 };
 
-// Controller: Get Authenticated User Profile
-exports.getProfile = async (req, res) => {
-  return res.status(501).json({
-    message: "Profile endpoint ready. Full authentication implementation pending."
-  });
+// ==========================================
+// 4. Authenticated User Profile Controller (GET /api/auth/me)
+// ==========================================
+exports.getMe = async (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({
+      success: false,
+      error: "Not authenticated. Please log in."
+    });
+  }
+
+  try {
+    const [rows] = await db.query(
+      "SELECT user_id, username, email, created_at FROM users WHERE user_id = ?",
+      [req.session.user.id]
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found."
+      });
+    }
+
+    const user = rows[0];
+
+    return res.json({
+      success: true,
+      user: {
+        userId: user.user_id,
+        username: user.username,
+        email: user.email,
+        createdAt: user.created_at
+      }
+    });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Server error while retrieving profile."
+    });
+  }
 };
+
+// Backward-compatible alias
+exports.getProfile = exports.getMe;

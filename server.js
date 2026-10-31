@@ -1,9 +1,13 @@
 require("dotenv").config();
 const express = require("express");
+const session = require("express-session");
 const path = require("path");
 
 // Database initialization
 const db = require("./config/db");
+
+// Middleware
+const authMiddleware = require("./middleware/authMiddleware");
 
 // Modular Route Handlers
 const authRoutes = require("./routes/authRoutes");
@@ -15,6 +19,24 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true }));
+
+// Secure Session-Based Authentication Configuration
+app.use(
+  session({
+    name: "banana_session",
+    secret: process.env.SESSION_SECRET || "banana_brain_quest_arcade_secret_session_key_2026",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  })
+);
+
+// Serve static frontend assets
 app.use(express.static(path.join(__dirname, "public")));
 
 // Register Modular API Routes
@@ -29,7 +51,7 @@ app.get("/login", (req, res) => {
 app.get("/register", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "pages", "register.html"));
 });
-app.get("/dashboard", (req, res) => {
+app.get("/dashboard", authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "pages", "dashboard.html"));
 });
 app.get("/leaderboard", (req, res) => {

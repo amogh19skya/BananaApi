@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Banana Surfers – Brain Quest Runner</title>
+  <link rel="stylesheet" href="css/runner.css" />
+</head>
+
+<body>
+  <!-- ======================================================== -->
+  <!-- Three.js 3D Canvas (full viewport)                       -->
+  <!-- ======================================================== -->
+  <canvas id="runner-canvas"></canvas>
+
+  <!-- ======================================================== -->
+  <!-- HUD Overlay                                              -->
+  <!-- ======================================================== -->
+  <div id="hud" class="hud">
+    <div class="hud-top">
+      <div class="hud-score">
+        <span class="hud-label">SCORE</span>
+        <span id="hud-score-value" class="hud-value">0</span>
+      </div>
+      <div class="hud-distance">
+        <span class="hud-label">DISTANCE</span>
+        <span id="hud-distance-value" class="hud-value">0m</span>
+      </div>
+      <div class="hud-bananas">
+        <span class="hud-label">🍌</span>
+        <span id="hud-banana-count" class="hud-value">0</span>
+      </div>
+      <div class="hud-multiplier hidden" id="hud-multiplier">
+        <span id="hud-multiplier-value" class="hud-multiplier-text">x2</span>
+      </div>
+    </div>
+
+    <!-- Active Power-Up Indicator -->
+    <div id="hud-powerup" class="hud-powerup hidden">
+      <div class="powerup-bar-bg">
+        <div id="powerup-bar-fill" class="powerup-bar-fill"></div>
+      </div>
+      <span id="powerup-name" class="powerup-name">JETPACK</span>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- Puzzle Modal (Bullet-Time Overlay)                       -->
+  <!-- ======================================================== -->
+  <div id="puzzle-modal" class="puzzle-modal hidden">
+    <div class="puzzle-modal-content">
+      <div class="puzzle-timer-ring">
+        <svg viewBox="0 0 120 120">
+          <circle class="timer-ring-bg" cx="60" cy="60" r="54" />
+          <circle id="timer-ring-progress" class="timer-ring-progress" cx="60" cy="60" r="54" />
+        </svg>
+        <span id="puzzle-timer-text" class="puzzle-timer-text">5</span>
+      </div>
+      <h2 class="puzzle-title">🍌 BANANA CRATE PUZZLE</h2>
+      <div class="puzzle-image-frame">
+        <img id="puzzle-image" alt="Banana puzzle" />
+        <div id="puzzle-loading" class="puzzle-loading">Loading puzzle…</div>
+      </div>
+      <p class="puzzle-instruction">Find the missing number!</p>
+      <div class="puzzle-numpad" id="puzzle-numpad">
+        <button class="numpad-key" data-num="1">1</button>
+        <button class="numpad-key" data-num="2">2</button>
+        <button class="numpad-key" data-num="3">3</button>
+        <button class="numpad-key" data-num="4">4</button>
+        <button class="numpad-key" data-num="5">5</button>
+        <button class="numpad-key" data-num="6">6</button>
+        <button class="numpad-key" data-num="7">7</button>
+        <button class="numpad-key" data-num="8">8</button>
+        <button class="numpad-key" data-num="9">9</button>
+        <button class="numpad-key numpad-zero" data-num="0">0</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- Start / Menu Screen                                      -->
+  <!-- ======================================================== -->
+  <div id="menu-screen" class="menu-screen">
+    <div class="menu-content">
+      <div class="menu-badge">🏃‍♂️ ENDLESS RUNNER</div>
+      <h1 class="menu-title">
+        <span class="title-banana">BANANA</span>
+        <span class="title-surfers">SURFERS</span>
+      </h1>
+      <p class="menu-tagline">RUN. SOLVE. POWER UP.</p>
+
+      <div class="menu-info">
+        <div class="menu-info-item">
+          <span class="info-icon">🍌</span>
+          <span>Collect Crates</span>
+        </div>
+        <div class="menu-info-item">
+          <span class="info-icon">🧩</span>
+          <span>Solve Puzzles</span>
+        </div>
+        <div class="menu-info-item">
+          <span class="info-icon">⚡</span>
+          <span>Earn Superpowers</span>
+        </div>
+      </div>
+
+      <button id="play-btn" class="play-btn" type="button">
+        <span class="play-icon">▶</span>
+        <span>START RUN</span>
+      </button>
+
+      <div class="menu-links">
+        <a href="/" class="menu-link">🎯 Brain Quest</a>
+        <a href="/leaderboard" class="menu-link">🏆 Leaderboard</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- Game Over Screen                                         -->
+  <!-- ======================================================== -->
+  <div id="gameover-screen" class="gameover-screen hidden">
+    <div class="gameover-content">
+      <div class="gameover-icon">💥</div>
+      <h2 class="gameover-title">GAME OVER</h2>
+      <div class="gameover-stats">
+        <div class="go-stat">
+          <span class="go-stat-label">DISTANCE</span>
+          <span id="go-distance" class="go-stat-value">0m</span>
+        </div>
+        <div class="go-stat">
+          <span class="go-stat-label">SCORE</span>
+          <span id="go-score" class="go-stat-value">0</span>
+        </div>
+        <div class="go-stat">
+          <span class="go-stat-label">🍌 COLLECTED</span>
+          <span id="go-bananas" class="go-stat-value">0</span>
+        </div>
+        <div class="go-stat">
+          <span class="go-stat-label">CRATES SOLVED</span>
+          <span id="go-crates" class="go-stat-value">0/0</span>
+        </div>
+      </div>
+      <div class="gameover-actions">
+        <button id="go-retry-btn" class="go-btn go-btn-primary" type="button">
+          🔄 RUN AGAIN
+        </button>
+        <button id="go-menu-btn" class="go-btn go-btn-secondary" type="button">
+          🏠 MENU
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- Touch Controls (Mobile)                                  -->
+  <!-- ======================================================== -->
+  <div id="touch-zone" class="touch-zone"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/obstacles.js"></script>
+  <script src="js/collectibles.js"></script>
+  <script src="js/powerups.js"></script>
+  <script src="js/puzzle.js"></script>
+  <script src="js/game.js"></script>
+</body>
+
+</html>
