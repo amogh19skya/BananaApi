@@ -1,16 +1,43 @@
-
+require("dotenv").config();
 const express = require("express");
 const path = require("path");
 
+// Database initialization
+const db = require("./config/db");
+
+// Modular Route Handlers
+const authRoutes = require("./routes/authRoutes");
+const scoreRoutes = require("./routes/scoreRoutes");
+const leaderboardRoutes = require("./routes/leaderboardRoutes");
+
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
+// Register Modular API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/scores", scoreRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
+
+// Convenient Page Navigation Routes
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pages", "login.html"));
+});
+app.get("/register", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pages", "register.html"));
+});
+app.get("/dashboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pages", "dashboard.html"));
+});
+app.get("/leaderboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pages", "leaderboard.html"));
+});
+
 // Official Banana API, documented by the provider.
-const BANANA_API =
-  "http://marcconrad.com/uob/banana/api.php?out=json";
+const BANANA_API = "http://marcconrad.com/uob/banana/api.php?out=json";
 
 let currentQuestion = null;
 

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Banana Brain Quest</title>
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../css/auth.css" />
+  <script src="../js/login.js" defer></script>
+</head>
+
+<body>
+  <main class="auth-container">
+    <div class="auth-header">
+      <span class="auth-icon">🍌</span>
+      <span class="eyebrow">PLAYER PORTAL</span>
+      <h1 class="auth-title">LOGIN</h1>
+      <p class="auth-subtitle">Sign in to save your high scores and climb the leaderboard.</p>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" placeholder="Enter your username" required autocomplete="username" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="Enter your password" required autocomplete="current-password" />
+      </div>
+
+      <button id="login-submit-btn" class="auth-submit-btn" type="submit">
+        LOGIN TO QUEST ➔
+      </button>
+
+      <div id="auth-feedback" class="auth-feedback" role="status" aria-live="polite"></div>
+    </form>
+
+    <div class="auth-footer">
+      <p>Don't have an account yet? <a class="auth-link" href="register.html">Register here</a></p>
+      <a class="back-home-link" href="../index.html">← Back to Game Arena</a>
+    </div>
+  </main>
+</body>
+
+</html>
+
