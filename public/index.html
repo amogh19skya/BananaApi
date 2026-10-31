@@ -4,12 +4,151 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Banana Brain Quest</title>
+  <title>Banana Brain Quest - Arcade Puzzle Arena</title>
   <link rel="stylesheet" href="style.css" />
   <script src="app.js" defer></script>
 </head>
 
 <body>
+  <!-- ======================================================== -->
+  <!-- Animated Opening Screen (Arcade Dark Purple & Gold Theme) -->
+  <!-- ======================================================== -->
+  <aside id="intro-screen" class="intro-screen" aria-label="Game Opening Screen">
+    <!-- Floating mathematical symbols, numbers & glowing particles -->
+    <div id="intro-particles" class="intro-particles" aria-hidden="true"></div>
+
+    <!-- Skip Intro Option -->
+    <button id="skip-intro-btn" class="skip-intro-btn" type="button" aria-label="Skip intro animation">
+      Skip Intro ⏭
+    </button>
+
+    <div class="intro-content">
+      <!-- Arcade Subtitle Badge -->
+      <div class="intro-badge">
+        <span class="badge-dot"></span>
+        ARCADE PUZZLE ARENA
+        <span class="badge-dot"></span>
+      </div>
+
+      <!-- Glowing Animated Title -->
+      <h1 class="intro-title">
+        <span class="title-word title-banana">BANANA</span>
+        <span class="title-word title-brain">BRAIN</span>
+        <span class="title-word title-quest">QUEST</span>
+      </h1>
+
+      <!-- Large Animated Banana Mascot in the Center -->
+      <div class="mascot-wrapper">
+        <div class="mascot-glow-ring"></div>
+        <svg class="banana-mascot" viewBox="0 0 240 280" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated Banana Mascot">
+          <g class="mascot-body-group">
+            <!-- Banana Outer Peel / Body -->
+            <path d="M 60,250 C 40,210 30,130 70,60 C 95,20 130,15 145,25 C 150,30 140,55 130,70 C 180,120 185,210 145,255 C 115,280 80,275 60,250 Z" fill="url(#bananaGrad)" stroke="#b8860b" stroke-width="4" stroke-linejoin="round" />
+            <!-- Banana Inner Highlight -->
+            <path d="M 75,70 C 95,35 125,30 135,38 C 105,80 120,150 145,210 C 130,230 100,240 85,225 C 65,190 55,130 75,70 Z" fill="url(#highlightGrad)" opacity="0.45" />
+            <!-- Stem Tip -->
+            <path d="M 140,24 C 145,15 152,10 156,12 C 160,14 158,24 150,28 Z" fill="#4d7c0f" stroke="#285006" stroke-width="2" />
+            <!-- Bottom Tip -->
+            <path d="M 58,248 C 54,254 50,258 48,256 C 45,252 50,245 55,242 Z" fill="#654321" />
+
+            <!-- Gamer Headset with Neon Earcups -->
+            <g class="mascot-accessories">
+              <!-- Headset Band -->
+              <path d="M 52,110 C 45,60 140,50 160,95" stroke="#a855f7" stroke-width="6" stroke-linecap="round" fill="none" />
+              <!-- Left Headphone Ear Cup -->
+              <rect x="42" y="98" width="16" height="28" rx="8" fill="#ec4899" stroke="#ffd700" stroke-width="2" />
+              <!-- Right Headphone Ear Cup -->
+              <rect x="152" y="88" width="16" height="28" rx="8" fill="#ec4899" stroke="#ffd700" stroke-width="2" />
+              <!-- Glowing Neon Headset Lights -->
+              <circle cx="50" cy="112" r="3" fill="#ffd700" class="headset-light" />
+              <circle cx="160" cy="102" r="3" fill="#ffd700" class="headset-light" />
+            </g>
+
+            <!-- Cute Animated Face -->
+            <g class="mascot-face">
+              <!-- Left Eye (Blinking) -->
+              <g class="mascot-eye eye-left">
+                <ellipse cx="88" cy="118" rx="10" ry="13" fill="#1e1135" />
+                <circle cx="85" cy="113" r="4.5" fill="#ffffff" />
+                <circle cx="91" cy="122" r="2" fill="#ffffff" />
+              </g>
+              <!-- Right Eye (Cheerful Eye) -->
+              <g class="mascot-eye eye-right">
+                <ellipse cx="126" cy="114" rx="10" ry="13" fill="#1e1135" />
+                <circle cx="123" cy="109" r="4.5" fill="#ffffff" />
+                <circle cx="129" cy="118" r="2" fill="#ffffff" />
+              </g>
+              <!-- Cute Rosy Cheeks -->
+              <circle cx="74" cy="128" r="8" fill="#ff4d88" opacity="0.6" />
+              <circle cx="138" cy="124" r="8" fill="#ff4d88" opacity="0.6" />
+              <!-- Big Happy Smile -->
+              <path d="M 94,134 Q 108,152 122,132" stroke="#1e1135" stroke-width="4.5" stroke-linecap="round" fill="none" />
+              <path d="M 100,138 Q 108,148 116,137" fill="#ff4d88" />
+            </g>
+
+            <!-- Playful Hands: Left Waving, Right Thumbs Up -->
+            <g class="mascot-hand-left">
+              <path d="M 52,150 Q 30,135 25,120 Q 22,115 28,112 Q 34,110 38,122 Q 44,115 50,128 Z" fill="#ffffff" stroke="#b8860b" stroke-width="2.5" />
+            </g>
+            <g class="mascot-hand-right">
+              <path d="M 160,145 Q 185,135 192,122 Q 196,116 190,112 Q 183,110 178,120 Q 172,112 165,126 Z" fill="#ffffff" stroke="#b8860b" stroke-width="2.5" />
+            </g>
+
+            <!-- Knowledge Stars Floating near Mascot -->
+            <g class="brain-sparkles">
+              <polygon points="106,35 110,45 120,46 112,53 115,63 106,57 97,63 100,53 92,46 102,45" fill="#ffd700" class="sparkle sparkle-1" />
+              <polygon points="70,40 73,47 80,48 74,53 76,60 70,56 64,60 66,53 60,48 67,47" fill="#c084fc" class="sparkle sparkle-2" />
+            </g>
+          </g>
+
+          <!-- SVG Color Gradients -->
+          <defs>
+            <linearGradient id="bananaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fff580" />
+              <stop offset="35%" stop-color="#ffd700" />
+              <stop offset="80%" stop-color="#ffb700" />
+              <stop offset="100%" stop-color="#f59e0b" />
+            </linearGradient>
+            <linearGradient id="highlightGrad" x1="0%" y1="0%" x2="100%" y2="80%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+              <stop offset="100%" stop-color="#fff7aa" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="mascot-floor-shadow"></div>
+      </div>
+
+      <!-- Tagline -->
+      <p class="intro-tagline">
+        <span class="tagline-word">THINK FAST.</span>
+        <span class="tagline-word">SOLVE SMART.</span>
+        <span class="tagline-word">BEAT THE CLOCK.</span>
+      </p>
+
+      <!-- Game Information Badge -->
+      <div class="intro-info-badge">
+        <span class="info-item"><span class="info-icon">🎯</span> 10 QUESTIONS</span>
+        <span class="info-divider">✦</span>
+        <span class="info-item"><span class="info-icon">⏱️</span> 60 SECONDS</span>
+      </div>
+
+      <!-- Prominent Animated START GAME Button -->
+      <div class="intro-action">
+        <button id="intro-start-button" class="intro-start-button" type="button">
+          <span class="btn-sparkle">⚡</span>
+          <span class="btn-text">START GAME</span>
+          <span class="btn-arrow">➔</span>
+        </button>
+      </div>
+
+      <!-- Helper info -->
+      <p class="intro-hint">Click <strong>START GAME</strong> or skip intro to enter the arena</p>
+    </div>
+  </aside>
+
+  <!-- ======================================================== -->
+  <!-- Main Game Card (Arcade Theme Cabinet)                     -->
+  <!-- ======================================================== -->
   <main class="game-card">
     <p class="eyebrow">THE DAILY BRAIN CHALLENGE</p>
     <h1>🍌 Banana Brain Quest</h1>
@@ -50,7 +189,10 @@
     <button id="start-button" class="secondary-button" type="button">
       Start Game
     </button>
-    <p class="footer">Think carefully. Trust your logic.</p>
+    <div class="footer-row">
+      <p class="footer">Think carefully. Trust your logic.</p>
+      <button id="replay-intro-btn" class="replay-intro-btn" type="button" aria-label="Replay opening intro">🎬 Opening Screen</button>
+    </div>
   </main>
 </body>
 

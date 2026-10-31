@@ -9,6 +9,13 @@ const answerForm = document.querySelector("#answer-form");
 const submitButton = document.querySelector("#submit-button");
 const startButton = document.querySelector("#start-button");
 
+// Intro Screen DOM Elements
+const introScreen = document.querySelector("#intro-screen");
+const introStartButton = document.querySelector("#intro-start-button");
+const skipIntroButton = document.querySelector("#skip-intro-btn");
+const replayIntroButton = document.querySelector("#replay-intro-btn");
+const introParticlesContainer = document.querySelector("#intro-particles");
+
 const ROUND_SECONDS = 60;
 const MAX_QUESTIONS = 10;
 const POINTS_PER_ANSWER = 10;
@@ -19,6 +26,7 @@ let timeLeft = ROUND_SECONDS;
 let questionActive = false;
 let gameActive = false;
 let timerId = null;
+let introTimerId = null;
 
 // ==========================================
 // Professional Audio & Sound Effects System
@@ -88,19 +96,105 @@ function playWrongSound() {
 
 // Play countdown ticking / beeping during the final 10 seconds
 function playCountdownSound(secondsRemaining) {
-  // If the audio file is a continuous multi-second countdown track (> 2s),
-  // start it once and let it play smoothly through the final 10 seconds.
   if (!isNaN(countdownSound.duration) && countdownSound.duration > 2) {
     if (countdownSound.paused) {
       countdownSound.currentTime = 0;
       safePlay(countdownSound);
     }
   } else {
-    // If it's a short 1-second tick/beep sound file, trigger it each second without overlapping
     stopSound(countdownSound);
     safePlay(countdownSound);
   }
 }
+
+// ==========================================
+// Animated Opening Intro Screen Controller
+// ==========================================
+
+// Generate floating mathematical symbols and glowing particles
+function initIntroParticles() {
+  if (!introParticlesContainer) return;
+  introParticlesContainer.innerHTML = "";
+
+  const mathSymbols = ["+", "−", "×", "÷", "=", "?", "!", "π", "√", "7", "3", "9", "42", "✦", "%", "∞"];
+  const count = window.innerWidth < 600 ? 22 : 36;
+
+  for (let i = 0; i < count; i++) {
+    const isSymbol = Math.random() > 0.45;
+    const el = document.createElement("span");
+
+    if (isSymbol) {
+      el.className = "intro-floating-symbol";
+      el.textContent = mathSymbols[Math.floor(Math.random() * mathSymbols.length)];
+      el.style.fontSize = `${Math.floor(Math.random() * 18 + 14)}px`;
+    } else {
+      el.className = "intro-glowing-particle";
+      const size = Math.floor(Math.random() * 6 + 3);
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+    }
+
+    el.style.left = `${(Math.random() * 94 + 3).toFixed(1)}%`;
+    el.style.top = `${(Math.random() * 94 + 3).toFixed(1)}%`;
+    el.style.animationDuration = `${(Math.random() * 8 + 8).toFixed(1)}s`;
+    el.style.animationDelay = `${(Math.random() * 6).toFixed(1)}s`;
+    el.style.opacity = (Math.random() * 0.55 + 0.25).toFixed(2);
+
+    introParticlesContainer.appendChild(el);
+  }
+}
+
+// Hide the intro screen and show the main game menu
+function hideIntro() {
+  if (introTimerId) {
+    clearTimeout(introTimerId);
+    introTimerId = null;
+  }
+  if (introScreen) {
+    introScreen.classList.add("hidden");
+  }
+}
+
+// Show the intro screen with animation & auto-advance timer
+function showIntro() {
+  if (introScreen) {
+    introScreen.classList.remove("hidden");
+    initIntroParticles();
+
+    // Auto-advance to main menu after the intro animation showcase (8.5 seconds)
+    if (introTimerId) clearTimeout(introTimerId);
+    introTimerId = setTimeout(() => {
+      hideIntro();
+    }, 8500);
+  }
+}
+
+// Event: Skip Intro button
+if (skipIntroButton) {
+  skipIntroButton.addEventListener("click", () => {
+    hideIntro();
+  });
+}
+
+// Event: START GAME clicked from opening screen
+if (introStartButton) {
+  introStartButton.addEventListener("click", () => {
+    hideIntro();
+    // Launch the existing game immediately
+    startButton.click();
+  });
+}
+
+// Event: Replay opening intro from game footer
+if (replayIntroButton) {
+  replayIntroButton.addEventListener("click", () => {
+    showIntro();
+  });
+}
+
+// ==========================================
+// Existing Game Logic & Banana API Handlers
+// ==========================================
 
 function setStatus(message) {
   status.textContent = message;
@@ -323,3 +417,6 @@ answerForm.addEventListener("submit", async (event) => {
     setStatus(error.message);
   }
 });
+
+// Initialize Opening Screen on page load
+showIntro();
