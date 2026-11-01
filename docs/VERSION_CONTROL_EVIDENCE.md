@@ -35,7 +35,8 @@ The repository demonstrates systematic feature branching throughout the full dev
 | `feature/runner-powerup-images` | Power-up artwork in reward modal with entrance animation | Merged via game-history branch |
 | `feature/game-history-statistics` | Record every game; full statistics dashboard; image/MIME fixes | Merged to main |
 | `feature/ninja-player-avatar` | Articulated ninja billboard character with running/jumping/sliding animations | Pushed to origin |
-| `feature/auth-login-first-flow` | Enforce login screen first on site entry, direct redirect to 3D runner on login | **Current feature branch** |
+| `feature/auth-login-first-flow` | Enforce login screen first on site entry, direct redirect to 3D runner on login | Pushed to origin |
+| `feature/free-obstacle-pass` | Free obstacle pass (shield charge) on puzzle solve: yellow aura glow, HUD icon, crash absorption with quick flash & 1s invulnerability | **Current feature branch** |
 
 ---
 
