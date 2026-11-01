@@ -37,9 +37,28 @@ app.use(
   })
 );
 
+// Auth-gated entry routes — must be BEFORE express.static so they are
+// not swallowed by the static file handler serving public/index.html
+
+// Root URL and direct index.html: redirect unauthenticated visitors to /login
+app.get(["/", "/index.html"], (req, res) => {
+  if (req.session && req.session.user && req.session.user.id) {
+    return res.redirect("/runner");
+  }
+  return res.redirect("/login");
+});
+
+app.get(["/runner/index.html"], authMiddleware, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 // Serve static frontend assets with correct MIME type for .jfif images
 // Chrome requires image/jpeg; the default image/pjpeg is not rendered
 app.use(express.static(path.join(__dirname, "public"), {
+  // Disable directory→index auto-serving so /runner route (with auth) fires first
+  index: false,
+  // Disable trailing-slash redirect so /runner stays as /runner
+  redirect: false,
   setHeaders: (res, filePath) => {
     if (filePath.endsWith(".jfif")) {
       res.setHeader("Content-Type", "image/jpeg");
@@ -54,7 +73,12 @@ app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/runner", runnerRoutes);
 
 // Convenient Page Navigation Routes
+
 app.get("/login", (req, res) => {
+  // Already logged in — skip login page and go straight to the game
+  if (req.session && req.session.user && req.session.user.id) {
+    return res.redirect("/runner");
+  }
   res.sendFile(path.join(__dirname, "public", "pages", "login.html"));
 });
 app.get("/register", (req, res) => {
@@ -66,7 +90,11 @@ app.get("/dashboard", authMiddleware, (req, res) => {
 app.get("/leaderboard", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "pages", "leaderboard.html"));
 });
-app.get("/runner", (req, res) => {
+// Runner game — requires authentication (handles both /runner and /runner/)
+app.get("/runner", authMiddleware, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+app.get("/runner/", authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 app.get("/quiz", (req, res) => {

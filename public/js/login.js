@@ -56,10 +56,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setFeedback(data.message || "Login successful! Redirecting to dashboard...", "success");
+        setFeedback(data.message || "Login successful! Loading game...", "success");
 
         setTimeout(() => {
-          window.location.href = "dashboard.html";
+          window.location.href = "/runner";
         }, 1000);
       } else {
         setFeedback(data.error || "Login failed. Please check your credentials.");

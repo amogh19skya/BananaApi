@@ -33,7 +33,9 @@ The repository demonstrates systematic feature branching throughout the full dev
 | `feature/align-with-assignment-brief` | Alignment with CIS046-3 brief requirements | Merged to main |
 | `feature/leaderboard-global-rankings` | Global + per-mode leaderboard with tie-breaking and deduplication | Merged to main (via PR) |
 | `feature/runner-powerup-images` | Power-up artwork in reward modal with entrance animation | Merged via game-history branch |
-| `feature/game-history-statistics` | Record every game; full statistics dashboard; image/MIME fixes | **Current feature branch** |
+| `feature/game-history-statistics` | Record every game; full statistics dashboard; image/MIME fixes | Merged to main |
+| `feature/ninja-player-avatar` | Articulated ninja billboard character with running/jumping/sliding animations | Pushed to origin |
+| `feature/auth-login-first-flow` | Enforce login screen first on site entry, direct redirect to 3D runner on login | **Current feature branch** |
 
 ---
 
