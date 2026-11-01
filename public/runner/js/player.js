@@ -27,6 +27,11 @@ const Player = (() => {
   let hoverboardAttachment;
   let magnetAuraRing;
   let multiplierCrown;
+  let shieldGlowGroup;
+  let shieldGlowMesh;
+  let shieldRingMesh;
+  let shieldLight;
+  let shieldCharge = 0;
 
   // State
   let currentLane = 1; // Center
@@ -203,7 +208,7 @@ const Player = (() => {
     magnetAuraRing = new THREE.Group();
     magnetAuraRing.position.set(0, 0.6, 0);
 
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0xffd700, wireframe: true });
+    const magnetRingMat = new THREE.MeshBasicMaterial({ color: 0xffd700, wireframe: true });
     const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.03, 8, 24), ringMat);
     ring1.rotation.x = Math.PI / 2;
     const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.02, 8, 24), ringMat);
@@ -225,6 +230,44 @@ const Player = (() => {
 
     multiplierCrown.visible = false;
     bodyGroup.add(multiplierCrown);
+
+    // 5. Free Obstacle Pass (Yellow Shield Aura)
+    shieldGlowGroup = new THREE.Group();
+    shieldGlowGroup.position.set(0, NORMAL_HEIGHT / 2, 0);
+
+    const shieldAuraGeo = new THREE.SphereGeometry(0.85, 18, 14);
+    shieldAuraGeo.scale(0.85, 1.15, 0.85);
+    const shieldAuraMat = new THREE.MeshBasicMaterial({
+      color: 0xffea00,
+      transparent: true,
+      opacity: 0.32,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    shieldGlowMesh = new THREE.Mesh(shieldAuraGeo, shieldAuraMat);
+    shieldGlowGroup.add(shieldGlowMesh);
+
+    const shieldRingGeo = new THREE.RingGeometry(0.35, 0.9, 24);
+    shieldRingGeo.rotateX(-Math.PI / 2);
+    const obstaclePassRingMat = new THREE.MeshBasicMaterial({
+      color: 0xffd700,
+      transparent: true,
+      opacity: 0.5,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    shieldRingMesh = new THREE.Mesh(shieldRingGeo, obstaclePassRingMat);
+    shieldRingMesh.position.y = -NORMAL_HEIGHT / 2 + 0.05;
+    shieldGlowGroup.add(shieldRingMesh);
+
+    shieldLight = new THREE.PointLight(0xffea00, 1.2, 3.5);
+    shieldLight.position.set(0, 0, 0);
+    shieldGlowGroup.add(shieldLight);
+
+    shieldGlowGroup.visible = false;
+    bodyGroup.add(shieldGlowGroup);
 
     scene.add(rootGroup);
     return rootGroup;
@@ -399,6 +442,15 @@ const Player = (() => {
       multiplierCrown.rotation.y += delta * 4;
     }
 
+    // ---- Yellow Shield Aura Pulse ----
+    if (shieldGlowGroup && shieldCharge > 0) {
+      const pulse = Math.sin(runAnimClock * 9);
+      shieldGlowMesh.scale.set(1 + pulse * 0.06, 1 + pulse * 0.06, 1 + pulse * 0.06);
+      shieldGlowMesh.material.opacity = 0.32 + pulse * 0.08;
+      shieldRingMesh.rotation.z += delta * 3.5;
+      shieldRingMesh.scale.set(1 + pulse * 0.04, 1 + pulse * 0.04, 1);
+    }
+
     // ---- Invulnerability Flashing ----
     if (isInvulnerable) {
       invulnerableTimer -= delta;
@@ -516,10 +568,50 @@ const Player = (() => {
     };
   }
 
-  function triggerInvulnerability(duration = 2.0) {
-    isInvulnerable = true;
-    invulnerableTimer = duration;
+  function triggerShieldFlash() {
+    const flashEl = document.getElementById("shield-hit-flash");
+    if (flashEl) {
+      flashEl.classList.remove("flash-active");
+      void flashEl.offsetWidth; // Force reflow
+      flashEl.classList.add("flash-active");
+    }
   }
+
+  function updateShieldHUD(active) {
+    const hudShield = document.getElementById("hud-shield-charge");
+    if (hudShield) {
+      if (active) {
+        hudShield.classList.remove("hidden");
+      } else {
+        hudShield.classList.add("hidden");
+      }
+    }
+  }
+
+  function addShieldCharge() {
+    shieldCharge = 1; // Maximum 1, charges do not stack
+    if (shieldGlowGroup) shieldGlowGroup.visible = true;
+    updateShieldHUD(true);
+  }
+
+  function hasShieldCharge() {
+    return shieldCharge > 0;
+  }
+
+  function consumeShieldCharge() {
+    if (shieldCharge <= 0) return false;
+    shieldCharge = 0;
+    if (shieldGlowGroup) shieldGlowGroup.visible = false;
+    triggerShieldFlash();
+    updateShieldHUD(false);
+    triggerInvulnerability(1.0); // ~1 second invulnerability
+    return true;
+  }
+
+  function triggerInvulnerability(duration = 2.0) {
+    isInvulnerable = true;
+    invulnerableTimer = duration;
+  }
 
   function consumeHoverboard() {
     if (isHoverboardActive) {
@@ -542,6 +634,9 @@ const Player = (() => {
     getCollisionBox,
     triggerInvulnerability,
     consumeHoverboard,
+    addShieldCharge,
+    hasShieldCharge,
+    consumeShieldCharge,
     applyPowerupVisuals,
     reset,
     getMesh: () => rootGroup,
