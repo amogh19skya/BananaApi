@@ -1,7 +1,8 @@
 // ================================================================
-// Banana Surfers – Articulated 3D Avatar & Controller
-// Features stylized Banana Surfer mascot, running stride animations,
-// and visible superpower attachments (Jetpack, Hoverboard, Magnet Aura)
+// Banana Surfers – Articulated 3D Runner Character & Controller
+// Stylized athletic 3D runner seen from behind (camera behind the player),
+// running forward down the track with articulated arm/leg stride loop,
+// jumping, sliding, lane banking, and game-over animation stopping.
 // ================================================================
 const Player = (() => {
   const LANE_WIDTH = 2.5;
@@ -17,6 +18,8 @@ const Player = (() => {
   // Three.js Meshes & Nodes
   let rootGroup;
   let bodyGroup;
+  let torsoGroup;
+  let headGroup;
   let leftLeg, rightLeg;
   let leftArm, rightArm;
   let headMesh;
@@ -45,6 +48,7 @@ const Player = (() => {
   let isInvulnerable = false;
   let invulnerableTimer = 0;
   let runAnimClock = 0;
+  let isGameOver = false;
 
   // Active Superpowers State
   let isJetpackActive = false;
@@ -56,22 +60,66 @@ const Player = (() => {
   const bbox = { width: 0.65, height: NORMAL_HEIGHT, depth: 0.65 };
 
   // ============================================================
-  // Avatar Construction — Ninja Billboard Sprite
-  // NinjaOne.png is loaded as a camera-facing PlaneGeometry billboard.
-  // All physics, collision, lane-switching, superpower attachments and
-  // animation state are fully preserved — only the visual mesh changes.
-  // Invisible dummy Groups keep animation code running without errors.
+  // Avatar Construction — Stylized 3D Human Runner (Seen from Behind)
+  // An original athletic character with backward runner cap, sports hoodie,
+  // articulated swinging arms & legs, and running sneakers with white soles.
   // ============================================================
-
-  // Sprite mesh reference for pose transforms
-  let ninjaSpriteBase = null;
-
   function buildAvatar(scene) {
     rootGroup = new THREE.Group();
     bodyGroup = new THREE.Group();
     rootGroup.add(bodyGroup);
 
-    // ---- Shared materials for power-up attachments ----
+    // ---- Materials (Stylized Vibrant Runner Palette) ----
+    // Skin Tone
+    const skinMat = new THREE.MeshStandardMaterial({
+      color: 0xf2c49b,
+      roughness: 0.65,
+      metalness: 0.05
+    });
+
+    // Athletic Running Hoodie / Jersey (Vibrant Cyan / Teal)
+    const jerseyMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      roughness: 0.5,
+      metalness: 0.1
+    });
+
+    // Contrasting White Stripe & Trim
+    const whiteTrimMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.35,
+      metalness: 0.1
+    });
+
+    // Backwards Cap & Accents (Vibrant Warm Amber / Orange)
+    const capMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      roughness: 0.55,
+      metalness: 0.1
+    });
+
+    // Dark Athletic Running Shorts (Charcoal Slate)
+    const shortsMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      roughness: 0.6,
+      metalness: 0.1
+    });
+
+    // Running Shoes (Bright Coral Red / Neon Orange)
+    const shoeMat = new THREE.MeshStandardMaterial({
+      color: 0xe11d48,
+      roughness: 0.45,
+      metalness: 0.15
+    });
+
+    // White Sneaker Soles
+    const soleMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.3,
+      metalness: 0.05
+    });
+
+    // Shared Materials for Attachments
     const chromeMat = new THREE.MeshStandardMaterial({
       color: 0xd1d5db,
       metalness: 0.9,
@@ -84,97 +132,201 @@ const Player = (() => {
       opacity: 0.85
     });
 
-    // ---- Ninja Sprite Billboard ----
-    // PlaneGeometry sized to match the character proportions.
-    // The plane rotates 180° so the ninja faces the -Z (running) direction.
-    const spriteW = 1.25;
-    const spriteH = 1.55;
-    const spriteGeo = new THREE.PlaneGeometry(spriteW, spriteH);
+    // ============================================================
+    // 1. Torso & Upper Body
+    // ============================================================
+    torsoGroup = new THREE.Group();
+    bodyGroup.add(torsoGroup);
 
-    const spriteMat = new THREE.MeshBasicMaterial({
-      transparent: true,
-      alphaTest: 0.05,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      color: 0x777777    // dim placeholder tint until texture loads
-    });
+    // Main Torso (Athletic V-Taper Shape)
+    // Centered around Y = 0.0 relative to body center (which is 0.7m above ground)
+    const torsoGeo = new THREE.CylinderGeometry(0.24, 0.19, 0.46, 12);
+    const torso = new THREE.Mesh(torsoGeo, jerseyMat);
+    torso.position.y = 0.02;
+    torso.castShadow = true;
+    torsoGroup.add(torso);
 
-    ninjaSpriteBase = new THREE.Mesh(spriteGeo, spriteMat);
-    // Shift sprite up so feet align with y=0 (ground level of bodyGroup)
-    ninjaSpriteBase.position.set(0, spriteH / 2, 0);
-    // Face into the running direction (-Z)
-    ninjaSpriteBase.rotation.y = Math.PI;
-    bodyGroup.add(ninjaSpriteBase);
+    // Athletic Stripe on the Back (Facing +Z toward camera)
+    const stripeGeo = new THREE.BoxGeometry(0.08, 0.40, 0.02);
+    const backStripe = new THREE.Mesh(stripeGeo, whiteTrimMat);
+    backStripe.position.set(0, 0.02, 0.195);
+    torsoGroup.add(backStripe);
 
-    // Load the ninja texture asynchronously
-    new THREE.TextureLoader().load(
-      '/images/characters/NinjaOne.png',
-      function (tex) {
-        tex.magFilter = THREE.LinearFilter;
-        tex.minFilter = THREE.LinearMipmapLinearFilter;
-        tex.generateMipmaps = true;
-        if (ninjaSpriteBase) {
-          ninjaSpriteBase.material.map = tex;
-          ninjaSpriteBase.material.color.set(0xffffff); // full brightness
-          ninjaSpriteBase.material.needsUpdate = true;
-        }
-      },
-      undefined,
-      function (err) {
-        console.warn('Ninja texture failed to load — keeping placeholder:', err);
-        // Show a visible cyan box so the player can still play
-        if (ninjaSpriteBase) {
-          ninjaSpriteBase.material.color.set(0x00ffff);
-          ninjaSpriteBase.material.needsUpdate = true;
-        }
-      }
-    );
+    // Runner Number Decal Block on Back (Seen clearly from behind)
+    const bibGeo = new THREE.BoxGeometry(0.20, 0.16, 0.02);
+    const bib = new THREE.Mesh(bibGeo, whiteTrimMat);
+    bib.position.set(0, 0.04, 0.196);
+    torsoGroup.add(bib);
 
-    // ---- Invisible dummy limb Groups ----
-    // The update() animation loop rotates these; keeping them as empty
-    // THREE.Group objects means the math runs cleanly with zero render cost.
-    leftLeg  = new THREE.Group();
-    rightLeg = new THREE.Group();
-    leftArm  = new THREE.Group();
-    rightArm = new THREE.Group();
-    headMesh = new THREE.Group();
-    // (Not added to the scene — rotation state only)
+    const bibNumGeo = new THREE.BoxGeometry(0.14, 0.05, 0.022);
+    const bibNumMat = new THREE.MeshBasicMaterial({ color: 0x0284c7 });
+    const bibNum = new THREE.Mesh(bibNumGeo, bibNumMat);
+    bibNum.position.set(0, 0.04, 0.198);
+    torsoGroup.add(bibNum);
+
+    // Waistband / Belt
+    const waistGeo = new THREE.CylinderGeometry(0.19, 0.185, 0.08, 12);
+    const waist = new THREE.Mesh(waistGeo, shortsMat);
+    waist.position.y = -0.22;
+    torsoGroup.add(waist);
 
     // ============================================================
-    // Superpower Visual Attachments
+    // 2. Head & Backwards Runner Cap
+    // ============================================================
+    headGroup = new THREE.Group();
+    headGroup.position.set(0, 0.38, 0);
+    bodyGroup.add(headGroup);
+
+    // Head Base
+    const headGeo = new THREE.SphereGeometry(0.18, 16, 14);
+    headMesh = new THREE.Mesh(headGeo, skinMat);
+    headMesh.castShadow = true;
+    headGroup.add(headMesh);
+
+    // Backwards Athletic Cap (Crown)
+    const capGeo = new THREE.SphereGeometry(0.19, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.6);
+    const cap = new THREE.Mesh(capGeo, capMat);
+    cap.position.y = 0.01;
+    headGroup.add(cap);
+
+    // Cap Visor (Facing +Z backward toward camera)
+    const visorGeo = new THREE.BoxGeometry(0.16, 0.025, 0.14);
+    const visor = new THREE.Mesh(visorGeo, capMat);
+    visor.position.set(0, -0.04, 0.15);
+    visor.rotation.x = -0.15; // Slight downward tilt on the backward visor
+    headGroup.add(visor);
+
+    // Bunched Hoodie Collar (At base of neck on back)
+    const collarGeo = new THREE.TorusGeometry(0.13, 0.045, 8, 16);
+    const collar = new THREE.Mesh(collarGeo, jerseyMat);
+    collar.position.set(0, -0.12, 0.04);
+    collar.rotation.x = Math.PI / 2 + 0.2;
+    headGroup.add(collar);
+
+    // ============================================================
+    // 3. Articulated Legs & Running Shoes
+    // ============================================================
+    function buildLeg(sideX) {
+      const legPivot = new THREE.Group();
+      legPivot.position.set(sideX, -0.24, 0); // Hip joint position
+
+      // Upper Leg / Running Shorts
+      const thighGeo = new THREE.CylinderGeometry(0.085, 0.075, 0.24, 10);
+      const thigh = new THREE.Mesh(thighGeo, shortsMat);
+      thigh.position.y = -0.12;
+      thigh.castShadow = true;
+      legPivot.add(thigh);
+
+      // Lower Leg (Skin + Athletic Sock)
+      const shinGeo = new THREE.CylinderGeometry(0.068, 0.058, 0.22, 10);
+      const shin = new THREE.Mesh(shinGeo, skinMat);
+      shin.position.y = -0.32;
+      shin.castShadow = true;
+      legPivot.add(shin);
+
+      // White Athletic Sock Band
+      const sockGeo = new THREE.CylinderGeometry(0.07, 0.065, 0.08, 10);
+      const sock = new THREE.Mesh(sockGeo, whiteTrimMat);
+      sock.position.y = -0.37;
+      legPivot.add(sock);
+
+      // Running Sneaker Body (Facing -Z forward down track, heel facing +Z to camera)
+      const shoeGeo = new THREE.BoxGeometry(0.14, 0.10, 0.28);
+      const shoe = new THREE.Mesh(shoeGeo, shoeMat);
+      shoe.position.set(0, -0.42, -0.03); // Slightly shifted forward so toe points -Z
+      shoe.castShadow = true;
+      legPivot.add(shoe);
+
+      // White Sneaker Sole
+      const soleGeo = new THREE.BoxGeometry(0.15, 0.04, 0.30);
+      const sole = new THREE.Mesh(soleGeo, soleMat);
+      sole.position.set(0, -0.47, -0.03);
+      legPivot.add(sole);
+
+      // Reflective Heel Accent on the Back (Facing camera)
+      const heelGeo = new THREE.BoxGeometry(0.08, 0.04, 0.02);
+      const heel = new THREE.Mesh(heelGeo, whiteTrimMat);
+      heel.position.set(0, -0.41, 0.11);
+      legPivot.add(heel);
+
+      return legPivot;
+    }
+
+    leftLeg = buildLeg(-0.13);
+    rightLeg = buildLeg(0.13);
+    bodyGroup.add(leftLeg);
+    bodyGroup.add(rightLeg);
+
+    // ============================================================
+    // 4. Articulated Arms & Hands
+    // ============================================================
+    function buildArm(sideX) {
+      const armPivot = new THREE.Group();
+      armPivot.position.set(sideX, 0.20, 0); // Shoulder joint position
+
+      // Upper Arm / Short Sleeve
+      const sleeveGeo = new THREE.CylinderGeometry(0.068, 0.060, 0.14, 10);
+      const sleeve = new THREE.Mesh(sleeveGeo, jerseyMat);
+      sleeve.position.y = -0.07;
+      armPivot.add(sleeve);
+
+      // Arm Limb (Skin tone)
+      const armGeo = new THREE.CylinderGeometry(0.058, 0.050, 0.26, 8);
+      const armMesh = new THREE.Mesh(armGeo, skinMat);
+      armMesh.position.set(0, -0.22, -0.02);
+      armMesh.rotation.x = 0.15; // Natural slight forward bend at elbow
+      armMesh.castShadow = true;
+      armPivot.add(armMesh);
+
+      // Hand / Wrist
+      const handGeo = new THREE.SphereGeometry(0.055, 8, 8);
+      const hand = new THREE.Mesh(handGeo, skinMat);
+      hand.position.set(0, -0.36, -0.04);
+      armPivot.add(hand);
+
+      return armPivot;
+    }
+
+    leftArm = buildArm(-0.28);
+    rightArm = buildArm(0.28);
+    bodyGroup.add(leftArm);
+    bodyGroup.add(rightArm);
+
+    // ============================================================
+    // 5. Superpower Visual Attachments
     // ============================================================
 
     // 1. Jetpack (Twin Rockets + Animated Flame Cones)
     jetpackAttachment = new THREE.Group();
-    jetpackAttachment.position.set(0, 0.65, -0.32);
+    jetpackAttachment.position.set(0, 0.05, 0.22); // Mounted on back of hoodie
 
-    const rocketGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.55, 10);
+    const rocketGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.50, 10);
     const rocketL = new THREE.Mesh(rocketGeo, chromeMat);
-    rocketL.position.x = -0.16;
+    rocketL.position.x = -0.14;
     const rocketR = new THREE.Mesh(rocketGeo, chromeMat);
-    rocketR.position.x = 0.16;
+    rocketR.position.x = 0.14;
     jetpackAttachment.add(rocketL);
     jetpackAttachment.add(rocketR);
 
-    // Rocket thruster nozzles
-    const nozzleGeo = new THREE.CylinderGeometry(0.12, 0.08, 0.12, 8);
+    // Thruster Nozzles
+    const nozzleGeo = new THREE.CylinderGeometry(0.11, 0.08, 0.10, 8);
     const nozMat = new THREE.MeshStandardMaterial({ color: 0x374151 });
     const nozL = new THREE.Mesh(nozzleGeo, nozMat);
-    nozL.position.set(-0.16, -0.32, 0);
+    nozL.position.set(-0.14, -0.28, 0);
     const nozR = new THREE.Mesh(nozzleGeo, nozMat);
-    nozR.position.set(0.16, -0.32, 0);
+    nozR.position.set(0.14, -0.28, 0);
     jetpackAttachment.add(nozL);
     jetpackAttachment.add(nozR);
 
-    // Flame cones
+    // Flame Cones
     jetpackFlames = new THREE.Group();
-    const flameGeo = new THREE.ConeGeometry(0.1, 0.45, 8);
+    const flameGeo = new THREE.ConeGeometry(0.09, 0.40, 8);
     const flameMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 });
     const flameL = new THREE.Mesh(flameGeo, flameMat);
-    flameL.position.set(-0.16, -0.55, 0);
+    flameL.position.set(-0.14, -0.50, 0);
     flameL.rotation.x = Math.PI;
     const flameR = new THREE.Mesh(flameGeo, flameMat);
-    flameR.position.set(0.16, -0.55, 0);
+    flameR.position.set(0.14, -0.50, 0);
     flameR.rotation.x = Math.PI;
     jetpackFlames.add(flameL);
     jetpackFlames.add(flameR);
@@ -183,11 +335,11 @@ const Player = (() => {
     jetpackAttachment.visible = false;
     bodyGroup.add(jetpackAttachment);
 
-    // 2. Hoverboard (Cyberpunk Surfboard underneath shoes)
+    // 2. Hoverboard (Underneath shoes)
     hoverboardAttachment = new THREE.Group();
-    hoverboardAttachment.position.set(0, -0.38, 0.05);
+    hoverboardAttachment.position.set(0, -0.74, -0.02);
 
-    const boardGeo = new THREE.BoxGeometry(0.65, 0.08, 1.5);
+    const boardGeo = new THREE.BoxGeometry(0.60, 0.07, 1.40);
     const boardMat = new THREE.MeshStandardMaterial({
       color: 0x1e1b4b,
       metalness: 0.8,
@@ -196,8 +348,7 @@ const Player = (() => {
     const board = new THREE.Mesh(boardGeo, boardMat);
     hoverboardAttachment.add(board);
 
-    // Glowing neon edge strips
-    const edgeGeo = new THREE.BoxGeometry(0.68, 0.04, 1.54);
+    const edgeGeo = new THREE.BoxGeometry(0.64, 0.035, 1.44);
     const edge = new THREE.Mesh(edgeGeo, neonCyanMat);
     hoverboardAttachment.add(edge);
 
@@ -206,12 +357,12 @@ const Player = (() => {
 
     // 3. Magnet Aura (Intersecting Golden Torus Rings)
     magnetAuraRing = new THREE.Group();
-    magnetAuraRing.position.set(0, 0.6, 0);
+    magnetAuraRing.position.set(0, 0.05, 0);
 
     const magnetRingMat = new THREE.MeshBasicMaterial({ color: 0xffd700, wireframe: true });
-    const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.03, 8, 24), ringMat);
+    const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.60, 0.025, 8, 24), magnetRingMat);
     ring1.rotation.x = Math.PI / 2;
-    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.02, 8, 24), ringMat);
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.020, 8, 24), magnetRingMat);
     ring2.rotation.y = Math.PI / 4;
     magnetAuraRing.add(ring1);
     magnetAuraRing.add(ring2);
@@ -219,11 +370,11 @@ const Player = (() => {
     magnetAuraRing.visible = false;
     bodyGroup.add(magnetAuraRing);
 
-    // 4. 2X Multiplier Floating Crown
+    // 4. Multiplier Floating Crown
     multiplierCrown = new THREE.Group();
-    multiplierCrown.position.set(0, 1.7, 0);
+    multiplierCrown.position.set(0, 0.70, 0);
 
-    const crownGeo = new THREE.OctahedronGeometry(0.2, 0);
+    const crownGeo = new THREE.OctahedronGeometry(0.18, 0);
     const crownMat = new THREE.MeshBasicMaterial({ color: 0xa855f7, wireframe: true });
     const crownMesh = new THREE.Mesh(crownGeo, crownMat);
     multiplierCrown.add(crownMesh);
@@ -233,7 +384,7 @@ const Player = (() => {
 
     // 5. Free Obstacle Pass (Yellow Shield Aura)
     shieldGlowGroup = new THREE.Group();
-    shieldGlowGroup.position.set(0, NORMAL_HEIGHT / 2, 0);
+    shieldGlowGroup.position.set(0, 0, 0);
 
     const shieldAuraGeo = new THREE.SphereGeometry(0.85, 18, 14);
     shieldAuraGeo.scale(0.85, 1.15, 0.85);
@@ -248,18 +399,18 @@ const Player = (() => {
     shieldGlowMesh = new THREE.Mesh(shieldAuraGeo, shieldAuraMat);
     shieldGlowGroup.add(shieldGlowMesh);
 
-    const shieldRingGeo = new THREE.RingGeometry(0.35, 0.9, 24);
+    const shieldRingGeo = new THREE.RingGeometry(0.35, 0.90, 24);
     shieldRingGeo.rotateX(-Math.PI / 2);
     const obstaclePassRingMat = new THREE.MeshBasicMaterial({
       color: 0xffd700,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.50,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
     shieldRingMesh = new THREE.Mesh(shieldRingGeo, obstaclePassRingMat);
-    shieldRingMesh.position.y = -NORMAL_HEIGHT / 2 + 0.05;
+    shieldRingMesh.position.y = -0.70;
     shieldGlowGroup.add(shieldRingMesh);
 
     shieldLight = new THREE.PointLight(0xffea00, 1.2, 3.5);
@@ -288,20 +439,26 @@ const Player = (() => {
     isInvulnerable = false;
     invulnerableTimer = 0;
     runAnimClock = 0;
+    isGameOver = false;
 
     isJetpackActive = false;
     isSneakersActive = false;
     isMagnetActive = false;
     isHoverboardActive = false;
     isMultiplierActive = false;
+    shieldCharge = 0;
 
     buildAvatar(scene);
+    updateShieldHUD(false);
   }
 
   function update(delta, speed) {
     if (!rootGroup) return;
 
-    runAnimClock += delta * (speed / 3);
+    // Advance animation clock only while game is active
+    if (!isGameOver) {
+      runAnimClock += delta * (speed / 3);
+    }
 
     // ---- Forward Movement ----
     positionZ -= speed * delta;
@@ -317,11 +474,11 @@ const Player = (() => {
       } else {
         rootGroup.position.x += step;
       }
-      // Banking tilt
-      bodyGroup.rotation.z = -Math.sign(dx) * 0.22;
+      // Banking tilt during lane switch
+      bodyGroup.rotation.z = -Math.sign(dx) * 0.20;
     } else {
       rootGroup.position.x = tx;
-      bodyGroup.rotation.z *= 0.82;
+      bodyGroup.rotation.z *= 0.80; // Smooth recovery to upright
     }
 
     // ---- Jetpack Flight Mode vs Ground Physics ----
@@ -343,7 +500,7 @@ const Player = (() => {
         if (positionY <= NORMAL_HEIGHT / 2) {
           positionY = NORMAL_HEIGHT / 2;
           velocityY = 0;
-          isJumping = false;
+          isJumping = false; // Smooth landing -> back to run cycle
         }
       } else {
         // Return to track level if descending from jetpack
@@ -357,10 +514,9 @@ const Player = (() => {
     }
 
     // ---- Slide State ----
-    // Stay sliding if DOWN key is held, or if slide timer is still running
     if (isSliding) {
       if (InputManager.isHeld("slide")) {
-        slideTimer = 0.2; // Keep alive while held
+        slideTimer = 0.2; // Keep sliding while key is held
       } else {
         slideTimer -= delta;
       }
@@ -369,67 +525,76 @@ const Player = (() => {
         isSliding = false;
         slideTimer = 0;
         bodyGroup.rotation.x = 0;
-        bodyGroup.scale.set(1, 1, 1);
-        // Reset ninja sprite transforms on slide exit
-        if (ninjaSpriteBase) {
-          ninjaSpriteBase.scale.set(1, 1, 1);
-          ninjaSpriteBase.rotation.x = 0;
-        }
+        bodyGroup.scale.set(1, 1, 1); // Reset back to run animation scale
       } else {
-        // Lean forward into aerodynamic slide
-        bodyGroup.rotation.x = 0.85;
-        bodyGroup.scale.set(1, 0.55, 1);
+        // Aerodynamic slide pose: crouch low and lean forward
+        bodyGroup.rotation.x = 0.75;
+        bodyGroup.scale.set(1.0, 0.55, 1.0);
       }
     }
 
-    // ---- Running Stride Animation Cycle ----
-    if (!isJumping && !isSliding && !isJetpackActive) {
-      const strideAngle = Math.sin(runAnimClock * 14) * 0.7;
+    // ============================================================
+    // Animation State Controller
+    // ============================================================
+    if (isGameOver) {
+      // Game Over: Stop all running animations, bring limbs to natural rest
+      if (leftLeg) leftLeg.rotation.x = 0;
+      if (rightLeg) rightLeg.rotation.x = 0;
+      if (leftArm) leftArm.rotation.x = 0;
+      if (rightArm) rightArm.rotation.x = 0;
+      bodyGroup.position.y = 0;
+      bodyGroup.rotation.x = 0;
+      bodyGroup.scale.set(1, 1, 1);
+    } else if (isSliding) {
+      // Slide Pose: legs extend forward in slide, arms back for balance
+      if (leftLeg) leftLeg.rotation.x = -1.1;
+      if (rightLeg) rightLeg.rotation.x = -0.7;
+      if (leftArm) leftArm.rotation.x = 0.6;
+      if (rightArm) rightArm.rotation.x = 0.6;
+    } else if (isJumping) {
+      // Jump Pose: knees tuck back, arms reach up/back for air balance
+      if (leftLeg) leftLeg.rotation.x = 0.45;
+      if (rightLeg) rightLeg.rotation.x = 0.55;
+      if (leftArm) leftArm.rotation.x = -1.1;
+      if (rightArm) rightArm.rotation.x = -1.1;
+
+      // Body tilts dynamically based on velocity
+      bodyGroup.rotation.x = velocityY > 0 ? -0.10 : 0.14;
+      bodyGroup.position.y = 0;
+    } else if (isJetpackActive) {
+      // Jetpack Flight: legs trail back, arms forward
+      if (leftLeg) leftLeg.rotation.x = 0.50;
+      if (rightLeg) rightLeg.rotation.x = 0.50;
+      if (leftArm) leftArm.rotation.x = 0.25;
+      if (rightArm) rightArm.rotation.x = 0.25;
+      bodyGroup.rotation.x = -0.15;
+    } else {
+      // ---- Looping Run Animation (Legs and arms swinging, slight body bob) ----
+      const strideAngle = Math.sin(runAnimClock * 14) * 0.75;
+
+      // Legs swing in opposite phases
       if (leftLeg) leftLeg.rotation.x = strideAngle;
       if (rightLeg) rightLeg.rotation.x = -strideAngle;
-      if (leftArm) leftArm.rotation.x = -strideAngle * 0.8;
-      if (rightArm) rightArm.rotation.x = strideAngle * 0.8;
 
-      // Subtle running bob
+      // Arms swing in counter-rhythm with legs (athletic arm pump)
+      if (leftArm) {
+        leftArm.rotation.x = -strideAngle * 0.85;
+        leftArm.rotation.z = -0.12;
+      }
+      if (rightArm) {
+        rightArm.rotation.x = strideAngle * 0.85;
+        rightArm.rotation.z = 0.12;
+      }
+
+      // Slight rhythmic body bob (peaks twice per stride cycle)
       bodyGroup.position.y = Math.abs(Math.sin(runAnimClock * 14)) * 0.08;
 
-      // -- Ninja sprite: run-bob squash & stretch --
-      if (ninjaSpriteBase) {
-        const bob = Math.abs(Math.sin(runAnimClock * 14));
-        // Slight vertical squash on foot-strike (bob peak) for cartoon weight
-        const scaleY = 1.0 + bob * 0.04;
-        const scaleX = 1.0 - bob * 0.025;
-        ninjaSpriteBase.scale.set(scaleX, scaleY, 1);
-        // Subtle forward lean during run
-        ninjaSpriteBase.rotation.x = 0.08;
-      }
-    } else if (isJumping) {
-      // Jump pose: legs tucked back, arms up
-      if (leftLeg) leftLeg.rotation.x = 0.5;
-      if (rightLeg) rightLeg.rotation.x = 0.5;
-      if (leftArm) leftArm.rotation.x = -1.2;
-      if (rightArm) rightArm.rotation.x = -1.2;
+      // Natural forward lean during running
+      bodyGroup.rotation.x = 0.08;
 
-      // -- Ninja sprite: jump stretch --
-      if (ninjaSpriteBase) {
-        // Stretch taller as velocity is positive, compress as falling
-        const stretchY = velocityY > 0 ? 1.12 : 0.92;
-        const stretchX = velocityY > 0 ? 0.90 : 1.06;
-        ninjaSpriteBase.scale.set(stretchX, stretchY, 1);
-        // Slight back-lean on ascent, forward-lean on descent
-        ninjaSpriteBase.rotation.x = velocityY > 0 ? -0.12 : 0.18;
-      }
-    } else if (isJetpackActive) {
-      // Flying pose: feet trailing back, arms forward
-      if (leftLeg) leftLeg.rotation.x = 0.6;
-      if (rightLeg) rightLeg.rotation.x = 0.6;
-      if (leftArm) leftArm.rotation.x = 0.3;
-      if (rightArm) rightArm.rotation.x = 0.3;
-
-      // -- Ninja sprite: fly pose (slight lean) --
-      if (ninjaSpriteBase) {
-        ninjaSpriteBase.scale.set(1.0, 1.1, 1);
-        ninjaSpriteBase.rotation.x = -0.15; // lean forward in flight
+      // Subtle torso counter-rotation for athletic rhythm
+      if (torsoGroup) {
+        torsoGroup.rotation.y = Math.sin(runAnimClock * 14) * 0.06;
       }
     }
 
@@ -448,7 +613,6 @@ const Player = (() => {
       shieldGlowMesh.scale.set(1 + pulse * 0.06, 1 + pulse * 0.06, 1 + pulse * 0.06);
       shieldGlowMesh.material.opacity = 0.32 + pulse * 0.08;
       shieldRingMesh.rotation.z += delta * 3.5;
-      shieldRingMesh.scale.set(1 + pulse * 0.04, 1 + pulse * 0.04, 1);
     }
 
     // ---- Invulnerability Flashing ----
@@ -460,34 +624,13 @@ const Player = (() => {
         rootGroup.visible = true;
       }
     }
-
-    // ---- Ninja sprite: billboard camera-facing ----
-    // Rotates the sprite plane to face the camera each frame.
-    // Only X/Y facing is corrected; the bodyGroup banking (Z) is kept
-    // as visual feedback during lane switches.
-    if (ninjaSpriteBase && typeof World !== "undefined" && World.getCamera) {
-      const cam = World.getCamera();
-      if (cam) {
-        // Get sprite's world position
-        const spriteWorldPos = new THREE.Vector3();
-        ninjaSpriteBase.getWorldPosition(spriteWorldPos);
-        // Compute direction from sprite to camera (XZ plane only for clean look)
-        const toCam = new THREE.Vector3(
-          cam.position.x - spriteWorldPos.x,
-          0,
-          cam.position.z - spriteWorldPos.z
-        ).normalize();
-        // atan2 gives us the Y rotation to face the camera in XZ plane
-        ninjaSpriteBase.rotation.y = Math.atan2(toCam.x, toCam.z);
-      }
-    }
   }
 
   // ============================================================
   // Controls & Action Handling
   // ============================================================
   function handleInput() {
-    if (!rootGroup) return;
+    if (!rootGroup || isGameOver) return;
 
     // Lane switches
     if (InputManager.consume("left")) {
@@ -551,7 +694,6 @@ const Player = (() => {
 
   function getCollisionBox() {
     if (!rootGroup) return null;
-    // Ground level is at y = (rootGroup.position.y - NORMAL_HEIGHT / 2)
     const groundY = rootGroup.position.y - NORMAL_HEIGHT / 2;
     const h = isSliding ? SLIDE_HEIGHT : NORMAL_HEIGHT;
     return {
@@ -608,10 +750,10 @@ const Player = (() => {
     return true;
   }
 
-  function triggerInvulnerability(duration = 2.0) {
-    isInvulnerable = true;
-    invulnerableTimer = duration;
-  }
+  function triggerInvulnerability(duration = 2.0) {
+    isInvulnerable = true;
+    invulnerableTimer = duration;
+  }
 
   function consumeHoverboard() {
     if (isHoverboardActive) {
@@ -620,6 +762,19 @@ const Player = (() => {
       return true;
     }
     return false;
+  }
+
+  function stopAnimation() {
+    isGameOver = true;
+    if (leftLeg) leftLeg.rotation.x = 0;
+    if (rightLeg) rightLeg.rotation.x = 0;
+    if (leftArm) leftArm.rotation.x = 0;
+    if (rightArm) rightArm.rotation.x = 0;
+    if (bodyGroup) {
+      bodyGroup.position.y = 0;
+      bodyGroup.rotation.x = 0;
+      bodyGroup.scale.set(1, 1, 1);
+    }
   }
 
   function reset(scene) {
@@ -638,6 +793,7 @@ const Player = (() => {
     hasShieldCharge,
     consumeShieldCharge,
     applyPowerupVisuals,
+    stopAnimation,
     reset,
     getMesh: () => rootGroup,
     getZ: () => positionZ,

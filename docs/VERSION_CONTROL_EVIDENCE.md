@@ -36,7 +36,8 @@ The repository demonstrates systematic feature branching throughout the full dev
 | `feature/game-history-statistics` | Record every game; full statistics dashboard; image/MIME fixes | Merged to main |
 | `feature/ninja-player-avatar` | Articulated ninja billboard character with running/jumping/sliding animations | Pushed to origin |
 | `feature/auth-login-first-flow` | Enforce login screen first on site entry, direct redirect to 3D runner on login | Pushed to origin |
-| `feature/free-obstacle-pass` | Free obstacle pass (shield charge) on puzzle solve: yellow aura glow, HUD icon, crash absorption with quick flash & 1s invulnerability | **Current feature branch** |
+| `feature/free-obstacle-pass` | Free obstacle pass (shield charge) on puzzle solve: yellow aura glow, HUD icon, crash absorption with quick flash & 1s invulnerability | Pushed to origin |
+| `feature/normal-running-character` | Articulated original 3D runner seen from behind with looping run animation, jump/slide recovery, and game-over animation stopping | **Current feature branch** |
 
 ---
 

@@ -257,6 +257,7 @@ const Game = (() => {
 
   function gameOver(reason = "💥 CRASHED!") {
     state = STATE.GAMEOVER;
+    if (Player && Player.stopAnimation) Player.stopAnimation(); // Stop running animation on Game Over
     AudioEngine.playCrash();
 
     // Check if player solved 10 questions/crates
