@@ -13,6 +13,7 @@
   <!-- Three.js 3D Canvas (full viewport)                       -->
   <!-- ======================================================== -->
   <canvas id="runner-canvas"></canvas>
+  <div id="shield-hit-flash" class="shield-hit-flash"></div>
 
   <!-- ======================================================== -->
   <!-- HUD Overlay (Modern Arcade Glassmorphism)                -->
@@ -66,6 +67,10 @@
       </div>
       <div class="hud-pill hud-multiplier hidden" id="hud-multiplier">
         <span id="hud-multiplier-value" class="hud-multiplier-text">2X</span>
+      </div>
+      <div class="hud-pill hud-shield-charge hidden" id="hud-shield-charge" title="Obstacle Pass Active: Absorbs 1 crash!">
+        <span class="hud-shield-icon">🛡️</span>
+        <span class="hud-shield-label">SHIELD PASS</span>
       </div>
     </div>
 
