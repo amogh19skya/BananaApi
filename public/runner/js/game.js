@@ -335,7 +335,10 @@ const Game = (() => {
     const hitObs = Obstacles.checkCollision(playerBox);
 
     if (hitObs && !Player.isInvulnerable()) {
-      if (Player.consumeHoverboard()) {
+      if (Player.consumeShieldCharge()) {
+        // Free Obstacle Pass absorbs collision!
+        // No crash, no game over, runner passes through with ~1s invulnerability
+      } else if (Player.consumeHoverboard()) {
         // Golden Hoverboard absorbs crash hit!
         AudioEngine.playCrash();
         Player.triggerInvulnerability(2.0);
@@ -380,6 +383,7 @@ const Game = (() => {
         if (result.powerup) {
           cratesSolved++;
           PowerupManager.activate(result.powerup);
+          Player.addShieldCharge(); // Free obstacle pass (shield charge) granted!
           score += Math.round(100 * PowerupManager.getMultiplier() * currentDifficulty.multiplier);
           if (cratesSolved >= 10) {
             gameOver("🏆 ALL 10 PUZZLES COMPLETED!");
